@@ -1,0 +1,84 @@
+server:
+  port: 8082
+
+spring:
+  output:
+    ansi:
+      enabled: ALWAYS
+
+  threads:
+    virtual:
+      enabled: true
+
+  application:
+    name: smart-gym-client
+
+  rabbitmq:
+    host: ${SPRING_RABBITMQ_HOST:localhost}
+    port: ${SPRING_RABBITMQ_PORT:5672}
+    username: ${SPRING_RABBITMQ_USERNAME:danek}
+    password: ${SPRING_RABBITMQ_PASSWORD:admin}
+    template:
+      observation-enabled: true
+    listener:
+      simple:
+        observation-enabled: true
+
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/smart_access_client}
+    username: ${DB_USER:danek}
+    password: ${DB_PASSWORD:admin}
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 2
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+    locations: classpath:db/migration
+
+#logging:
+#  level:
+#    org.springframework.web: INFO
+#    com.sprint.client: DEBUG
+#    org.flywaydb: DEBUG
+
+app:
+  rabbitmq:
+    exchange: "client.direct"
+    routing-keys:
+      created: "client.event.created"
+      status-changed: "client.event.status.changed"
+
+management:
+  tracing:
+    enabled: true
+    sampling:
+      probability: 1.0
+    propagation:
+      type: w3c
+    export:
+      zipkin:
+        endpoint: ${ZIPKIN_URL:http://localhost:9411/api/v2/spans}
+
+logging:
+  level:
+    root: INFO
+    org.springframework.web: INFO
+    com.sprint.client: DEBUG
+    org.flywaydb: DEBUG
+    org.hibernate.SQL: DEBUG
+    org.hibernate.type.descriptor.sql.BasicBinder: TRACE
+  pattern:
+    level: "%5p [${spring.application.name:},%X{traceId:-},%X{spanId:-}]"
+    console: "%d{yyyy-MM-dd HH:mm:ss} %clr(%5p) %clr([${spring.application.name:},%X{traceId:-},%X{spanId:-}]){faint} %clr(%logger{36}){cyan} - %m%n"

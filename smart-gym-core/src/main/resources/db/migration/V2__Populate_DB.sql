@@ -1,0 +1,5 @@
+INSERT INTO access_zone (zone_name) VALUES
+('MAIN_ENTRANCE'),
+('COMMON_OFFICE'),
+('SERVER_ROOM'),
+('VIP_TERRACE');

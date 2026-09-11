@@ -1,0 +1,56 @@
+server:
+  port: 8081
+
+spring:
+
+  output:
+    ansi:
+      enabled: ALWAYS
+
+  threads:
+    virtual:
+      enabled: true
+
+  application:
+    name: smart-gym-notification
+
+  rabbitmq:
+    host: ${SPRING_RABBITMQ_HOST:localhost}
+    port: ${SPRING_RABBITMQ_PORT:5672}
+    username: ${SPRING_RABBITMQ_USERNAME:danek}
+    password: ${SPRING_RABBITMQ_PASSWORD:admin}
+    template:
+      observation-enabled: true
+    listener:
+      simple:
+        observation-enabled: true
+
+integration:
+  crm:
+    base-url: ${INTEGRATION_CRM_BASE_URL:https://postman-echo.com}
+
+app:
+  rabbitmq:
+    exchange: "gym.events"
+    routing-key: "gym.access.registered"
+    binding-pattern: "gym.access.*"
+    queue: "gym.notifications.queue"
+    dlx: "gym.dlx"
+    dlq: "gym.notifications.dlq.queue"
+
+management:
+  tracing:
+    enabled: true
+    sampling:
+      probability: 1.0
+    propagation:
+      type: w3c
+    export:
+      zipkin:
+        endpoint: ${ZIPKIN_URL:http://localhost:9411/api/v2/spans}
+
+logging:
+  include-application-name: false
+  pattern:
+    correlation: "[${spring.application.name:},%X{traceId:-},%X{spanId:-}] "
+    console: "%clr(%d{yyyy-MM-dd HH:mm:ss.SSS}){faint} %clr(${LOG_LEVEL_PATTERN:-%5p}) %clr(${spring.application.name:-}){cyan} %clr([%X{traceId:-},%X{spanId:-}]){magenta} %clr(${PID:- }){magenta} %clr(---){faint} %clr([%15.15t]){faint} %clr(%-40.40logger{39}){cyan} %clr(:){faint} %m%n${LOG_EXCEPTION_CONVERSION_WORD:-%wEx}"

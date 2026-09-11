@@ -1,0 +1,21 @@
+# Переменные окружения
+.env
+*.env
+
+# Сборка Maven
+target/
+**/target/
+*.jar
+*.war
+
+# Настройки IDE
+.idea/
+**/.idea/
+*.iml
+**/*.iml
+.vscode/
+.DS_Store
+
+# Логи и временные файлы
+*.log
+logs/
