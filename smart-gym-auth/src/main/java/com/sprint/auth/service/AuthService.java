@@ -158,8 +158,11 @@ public class AuthService {
                 .orElseThrow(() -> new ResourceNotFoundException("Refresh token not found"));
 
         if (oldRefreshToken.isRevoked()) {
-            this.refreshTokenRepository.revokeAllByUserId(oldRefreshToken.getUser().getId());
+            this.refreshTokenRepository.deleteAllByUserId(oldRefreshToken.getUser().getId());
             throw new AccessDeniedException("Security alert: Token reuse detected. All sessions terminated.");
+/*
+deleteAllByUserId COULD BE REPLACED BY revokeAllByUserId IF NEEDED (THE MAIN DIFF IS THE TOKENS WILL REMAIN IN THE DB MARKED WITH FLAG revoked=true)
+*/
         }
 
         if (oldRefreshToken.isExpired()) {

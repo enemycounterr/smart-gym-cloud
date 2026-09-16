@@ -1,0 +1,113 @@
+server:
+  port: 8000
+
+spring:
+  application:
+    name: smart-gym-gateway
+
+  output:
+    ansi:
+      enabled: ALWAYS
+
+  cloud:
+    gateway:
+      server:
+        webflux:
+          # 1. SETUP CORS (React)
+          globalcors:
+            cors-configurations:
+              '[/**]':
+                allowedOrigins:
+                  - "http://localhost:3000"
+                allowedMethods:
+                  - GET
+                  - POST
+                  - PUT
+                  - PATCH
+                  - DELETE
+                  - OPTIONS
+                allowedHeaders: "*"
+                allowCredentials: true
+          routes:
+            # BUSINESS ROUTES
+            - id: auth-service
+              uri: ${AUTH_SERVICE_URL:http://localhost:8083}
+              predicates:
+                - Path=/api/v1/auth/**
+
+            - id: core-service
+              uri: ${CORE_SERVICE_URL:http://localhost:8080}
+              predicates:
+                - Path=/api/v1/zones/**, /api/v1/access/**
+#            - id: core-service-zones
+#              uri: ${CORE_SERVICE_URL:http://localhost:8080}
+#              predicates:
+#                - Path=/api/v1/zones/**
+#            - id: core-service-access
+#              uri: ${CORE_SERVICE_URL:http://localhost:8080}
+#              predicates:
+#                - Path=/api/v1/access/**
+            - id: client-service
+              uri: ${CLIENT_SERVICE_URL:http://localhost:8082}
+              predicates:
+                - Path=/api/v1/clients/**
+            - id: notification-service-admin
+              uri: ${NOTIFICATION_SERVICE_URL:http://localhost:8081}
+              predicates:
+                - Path=/api/v1/admin/rabbitmq/**
+
+            # OPENAPI / SWAGGER AGGREGATION ROUTES
+            - id: auth-docs
+              uri: ${AUTH_SERVICE_URL:http://localhost:8083}
+              predicates:
+                - Path=/v3/api-docs/auth, /v3/api-docs/auth/**
+              filters:
+                - SetPath=/v3/api-docs
+            - id: core-docs
+              uri: ${CORE_SERVICE_URL:http://localhost:8080}
+              predicates:
+                - Path=/v3/api-docs/core, /v3/api-docs/core/**
+              filters:
+                - SetPath=/v3/api-docs
+            - id: client-docs
+              uri: ${CLIENT_SERVICE_URL:http://localhost:8082}
+              predicates:
+                - Path=/v3/api-docs/client, /v3/api-docs/client/**
+              filters:
+                - SetPath=/v3/api-docs
+            - id: notification-docs
+              uri: ${NOTIFICATION_SERVICE_URL:http://localhost:8081}
+              predicates:
+                - Path=/v3/api-docs/notification, /v3/api-docs/notification/**
+              filters:
+                - SetPath=/v3/api-docs
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+    urls:
+      - name: 1. Auth Service (IAM)
+        url: /v3/api-docs/auth
+      - name: 2. Core Service (Access Control)
+        url: /v3/api-docs/core
+      - name: 3. Client Service
+        url: /v3/api-docs/client
+      - name: 4. Notification Service (DLQ Admin)
+        url: /v3/api-docs/notification
+
+management:
+  tracing:
+    enabled: true
+    sampling:
+      probability: 1.0
+    propagation:
+      type: w3c
+    export:
+      zipkin:
+        endpoint: ${ZIPKIN_URL:http://localhost:9411/api/v2/spans}
+
+logging:
+  include-application-name: false
+  pattern:
+    correlation: "[${spring.application.name:},%X{traceId:-},%X{spanId:-}] "
+    console: "%clr(%d{yyyy-MM-dd HH:mm:ss.SSS}){faint} %clr(${LOG_LEVEL_PATTERN:-%5p}) %clr(${spring.application.name:-}){cyan} %clr([%X{traceId:-},%X{spanId:-}]){magenta} %clr(${PID:- }){magenta} %clr(---){faint} %clr([%15.15t]){faint} %clr(%-40.40logger{39}){cyan} %clr(:){faint} %m%n${LOG_EXCEPTION_CONVERSION_WORD:-%wEx}"

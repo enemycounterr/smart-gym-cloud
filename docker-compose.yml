@@ -56,6 +56,23 @@ services:
       timeout: 5s
       retries: 5
 
+  smart-gym-gateway:
+    build: ./smart-gym-gateway
+    container_name: smart-gym-gateway
+    ports:
+      - "8000:8000"
+    depends_on:
+      - smart-gym-core
+      - smart-gym-auth
+      - smart-gym-client
+      - smart-gym-notification
+    environment:
+      - AUTH_SERVICE_URL=http://smart-gym-auth:8083
+      - CORE_SERVICE_URL=http://smart-gym-core:8080
+      - CLIENT_SERVICE_URL=http://smart-gym-client:8082
+      - NOTIFICATION_SERVICE_URL=http://smart-gym-notification:8081
+      - ZIPKIN_URL=http://zipkin:9411/api/v2/spans
+
   smart-gym-core:
     build: ./smart-gym-core
     container_name: smart-gym-core
