@@ -30,4 +30,7 @@ public class AccessCard {
     @Column(name = "client_id", nullable = false, unique = true)
     private Long clientId;
 
+    @Column(name = "client_name", nullable = false)
+    private String clientName;
+
 }

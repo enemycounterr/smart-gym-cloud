@@ -56,6 +56,7 @@ public class AccessServiceIntegrationTest extends BaseIntegrationTest {
         AccessCard card = AccessCard.builder()
                 .rfidToken(rfidToken)
                 .clientId(testClientId)
+                .clientName("Integration User")
                 .isActive(true)
                 .issuedAt(LocalDateTime.now())
                 .build();
@@ -99,6 +100,6 @@ public class AccessServiceIntegrationTest extends BaseIntegrationTest {
         ClientAccessStatsResponse stats2 = accessService.getClientStats(testClientId);
         assertEquals(1, stats2.totalEntries(), "Statistics should update to 1 entry");
 
-        verify(3, getRequestedFor(urlEqualTo("/api/v1/clients/" + testClientId)));
+        verify(2, getRequestedFor(urlEqualTo("/api/v1/clients/" + testClientId)));
     }
 }

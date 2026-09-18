@@ -65,6 +65,7 @@ public class AccessService {
         AccessCard card = AccessCard.builder()
                 .rfidToken(generatedToken)
                 .clientId(event.clientId())
+                .clientName(event.name())
                 .isActive(true)
                 .issuedAt(LocalDateTime.now())
                 .build();
@@ -154,25 +155,20 @@ public class AccessService {
         }
 
         Long currentClientId = card.getClientId();
-
-        ClientResponse client = fetchClientSafely(currentClientId);
-
-        if (!client.isActive()) {
-            throw new ZoneAccessDeniedException("Access denied! Client " + client.name() + " is inactive!");
-        }
+        String currentClientName = card.getClientName();
 
         AccessZone accessZone = accessZoneRepository.findById(request.zoneId())
                 .orElseThrow(() -> new ResourceNotFoundException("Zone not found with ID: " + request.zoneId()));
 
         if (!this.accessZoneRepository.hasClientAccess(request.zoneId(), currentClientId)) {
-            throw new ZoneAccessDeniedException("Access denied! Client '" + client.name() +
+            throw new ZoneAccessDeniedException("Access denied! Client '" + currentClientName +
                     "' does not have permission for zone '" + accessZone.getZoneName() + "'");
         }
 
         Optional<AccessLog> latestLog = this.accessLogRepository.findFirstByClientIdOrderByTimeStampDesc(currentClientId);
 
         if (latestLog.isPresent() && latestLog.get().getDirection() == request.direction()) {
-            throw new ZoneAccessDeniedException("Anti-Passback violation! Client '" + client.name() +
+            throw new ZoneAccessDeniedException("Anti-Passback violation! Client '" + currentClientName +
                     "' already performed direction: " + request.direction());
         }
 
@@ -184,7 +180,7 @@ public class AccessService {
         AccessRegisterEvent event = new AccessRegisterEvent(
                 savedLog.getId(),
                 currentClientId,
-                client.name(),
+                currentClientName,
                 accessZone.getZoneName(),
                 savedLog.getDirection().name(),
                 savedLog.getTimeStamp()
@@ -197,7 +193,7 @@ public class AccessService {
                 event
         );
 
-        return accessMapper.toDto(savedLog, client.name());
+        return accessMapper.toDto(savedLog, currentClientName);
     }
 
     @Cacheable(value = "clientStats", key = "#clientId")

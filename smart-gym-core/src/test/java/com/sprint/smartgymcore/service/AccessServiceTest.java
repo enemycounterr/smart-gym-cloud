@@ -51,8 +51,6 @@ public class AccessServiceTest {
     private MetricsService metricsService;
     @Mock
     private NotificationRabbitProperties notificationRabbitProperties;
-    @Mock
-    private ClientApiClient clientApiClient;
 
     @InjectMocks
     private AccessService accessService;
@@ -65,6 +63,7 @@ public class AccessServiceTest {
         return AccessCard.builder()
                 .rfidToken(token)
                 .clientId(1L)
+                .clientName("Danek")
                 .isActive(true)
                 .build();
     }
@@ -100,7 +99,6 @@ public class AccessServiceTest {
                 .build();
 
         when(accessCardRepository.findByRfidToken(token)).thenReturn(Optional.of(card));
-        when(clientApiClient.getClientById(1L)).thenReturn(createMockClientResponse());
 
         when(accessZoneRepository.findById(1L)).thenReturn(Optional.of(zone));
         when(accessZoneRepository.hasClientAccess(1L, 1L)).thenReturn(true);
@@ -125,7 +123,7 @@ public class AccessServiceTest {
                 .build();
 
         when(accessCardRepository.findByRfidToken(token)).thenReturn(Optional.of(card));
-        when(clientApiClient.getClientById(1L)).thenReturn(createMockClientResponse());
+
         when(accessZoneRepository.findById(1L)).thenReturn(Optional.of(zone));
         when(accessZoneRepository.hasClientAccess(1L, 1L)).thenReturn(true);
         when(accessLogRepository.findFirstByClientIdOrderByTimeStampDesc(1L)).thenReturn(Optional.of(lastLog));
@@ -167,7 +165,6 @@ public class AccessServiceTest {
         );
 
         when(accessCardRepository.findByRfidToken(token)).thenReturn(Optional.of(card));
-        when(clientApiClient.getClientById(1L)).thenReturn(createMockClientResponse());
         when(accessZoneRepository.findById(1L)).thenReturn(Optional.of(zone));
         when(accessZoneRepository.hasClientAccess(1L, 1L)).thenReturn(true);
         when(accessLogRepository.findFirstByClientIdOrderByTimeStampDesc(1L)).thenReturn(Optional.of(lastLog));

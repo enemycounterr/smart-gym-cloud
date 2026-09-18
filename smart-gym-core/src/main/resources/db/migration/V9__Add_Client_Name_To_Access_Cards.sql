@@ -1,0 +1,1 @@
+ALTER TABLE access_cards ADD COLUMN client_name VARCHAR(255) NOT NULL DEFAULT 'Unknown Client';
