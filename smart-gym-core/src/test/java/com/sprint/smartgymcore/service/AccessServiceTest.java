@@ -16,6 +16,7 @@ import com.sprint.smartgymcore.model.AccessZone;
 import com.sprint.smartgymcore.repository.AccessCardRepository;
 import com.sprint.smartgymcore.repository.AccessLogRepository;
 import com.sprint.smartgymcore.repository.AccessZoneRepository;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -30,10 +31,8 @@ import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 public class AccessServiceTest {
@@ -46,8 +45,6 @@ public class AccessServiceTest {
     private AccessZoneRepository accessZoneRepository;
     @Mock
     private AccessMapper accessMapper;
-    @Mock
-    private CacheManager cacheManager;
     @Mock
     private RabbitTemplate rabbitTemplate;
     @Mock
@@ -82,14 +79,14 @@ public class AccessServiceTest {
 
     private void mockNotificationRabbitProperties() {
         NotificationRabbitProperties.RoutingKeys routingKeys = mock(NotificationRabbitProperties.RoutingKeys.class);
-        when(notificationRabbitProperties.exchange()).thenReturn("exchange");
+        when(notificationRabbitProperties.exchange()).thenReturn("gym.events");
         when(notificationRabbitProperties.routingKeys()).thenReturn(routingKeys);
-        when(routingKeys.accessRegistered()).thenReturn("routing.key");
+        when(routingKeys.accessRegistered()).thenReturn("gym.access.registered");
     }
 
     @Test
+    @DisplayName("registerAccess: should throw ZoneAccessDeniedException on sequential IN swipes (anti-passback)")
     public void registerAccess_whenDoubleIn_shouldThrowZoneAccessDeniedException() {
-
         String token = "RFID-123";
         AccessCard card = createMockCard(token);
         AccessZone zone = createMockZone();
@@ -108,10 +105,13 @@ public class AccessServiceTest {
         when(accessZoneRepository.findById(1L)).thenReturn(Optional.of(zone));
         when(accessZoneRepository.hasClientAccess(1L, 1L)).thenReturn(true);
         when(accessLogRepository.findFirstByClientIdOrderByTimeStampDesc(1L)).thenReturn(Optional.of(lastLog));
+
         assertThrows(ZoneAccessDeniedException.class, () -> accessService.registerAccess(request));
+        verifyNoInteractions(rabbitTemplate, metricsService);
     }
 
     @Test
+    @DisplayName("registerAccess: should throw ZoneAccessDeniedException on sequential OUT swipes (anti-passback)")
     public void registerAccess_whenDoubleOut_shouldThrowZoneAccessDeniedException() {
         String token = "RFID-123";
         AccessCard card = createMockCard(token);
@@ -131,9 +131,11 @@ public class AccessServiceTest {
         when(accessLogRepository.findFirstByClientIdOrderByTimeStampDesc(1L)).thenReturn(Optional.of(lastLog));
 
         assertThrows(ZoneAccessDeniedException.class, () -> accessService.registerAccess(request));
+        verifyNoInteractions(rabbitTemplate, metricsService);
     }
 
     @Test
+    @DisplayName("registerAccess: should register access and trigger messaging and metrics when valid")
     public void registerAccess_whenInAfterOut_shouldSucceed() {
         String token = "RFID-123";
         AccessCard card = createMockCard(token);
@@ -173,14 +175,17 @@ public class AccessServiceTest {
         when(accessMapper.toEntity(request, 1L, zone)).thenReturn(savedLog);
         when(accessLogRepository.save(savedLog)).thenReturn(savedLog);
         when(accessMapper.toDto(savedLog, "Danek")).thenReturn(expectedResponse);
-
-        Cache mockCache = mock(Cache.class);
-        when(cacheManager.getCache("clientStats")).thenReturn(mockCache);
         mockNotificationRabbitProperties();
 
         AccessLogResponse result = accessService.registerAccess(request);
 
+        assertNotNull(result);
         assertEquals(AccessDirection.IN, result.direction());
+        assertEquals(expectedResponse, result);
+
+        verify(accessLogRepository).save(savedLog);
+        verify(metricsService).incrementAccessEventReceived(AccessDirection.IN);
+        verify(rabbitTemplate).convertAndSend(eq("gym.events"), eq("gym.access.registered"), any(Object.class));
     }
 
 }

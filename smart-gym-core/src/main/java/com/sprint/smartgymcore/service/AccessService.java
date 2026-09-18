@@ -26,14 +26,12 @@ import com.sprint.smartgymcore.repository.AccessZoneRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
-import org.springframework.cache.CacheManager;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.transaction.support.TransactionSynchronization;
-import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.web.client.RestClientResponseException;
 
 import java.time.LocalDateTime;
@@ -51,7 +49,6 @@ public class AccessService {
 
     private final AccessMapper accessMapper;
 
-    private final CacheManager cacheManager;
     private final RabbitTemplate rabbitTemplate;
 
     private final MetricsService metricsService;
@@ -142,6 +139,7 @@ public class AccessService {
     }
 
     @Transactional
+    @CacheEvict(value = "clientStats", key = "#result.clientId")
     public AccessLogResponse registerAccess(AccessCheckRequest request) {
         log.info("Processing access registration for RFID: {}", request.rfidToken());
 
@@ -181,8 +179,6 @@ public class AccessService {
         AccessLog accessLog = this.accessMapper.toEntity(request, currentClientId, accessZone);
         AccessLog savedLog = this.accessLogRepository.save(accessLog);
 
-        evictClientStatsCache(currentClientId);
-
         this.metricsService.incrementAccessEventReceived(request.direction());
 
         AccessRegisterEvent event = new AccessRegisterEvent(
@@ -195,7 +191,6 @@ public class AccessService {
         );
 
         log.info("Access successfully registered, sending event to RabbitMQ");
-
         this.rabbitTemplate.convertAndSend(
                 notificationRabbitProperties.exchange(),
                 notificationRabbitProperties.routingKeys().accessRegistered(),
@@ -203,19 +198,6 @@ public class AccessService {
         );
 
         return accessMapper.toDto(savedLog, client.name());
-    }
-
-    private void evictClientStatsCache(Long clientId) {
-        if (TransactionSynchronizationManager.isSynchronizationActive()) {
-            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
-                @Override
-                public void afterCommit() {
-                    cacheManager.getCache("clientStats").evict(clientId);
-                }
-            });
-        } else {
-            cacheManager.getCache("clientStats").evict(clientId);
-        }
     }
 
     @Cacheable(value = "clientStats", key = "#clientId")

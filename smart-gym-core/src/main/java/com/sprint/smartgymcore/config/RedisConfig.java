@@ -16,16 +16,22 @@ import tools.jackson.databind.jsontype.BasicPolymorphicTypeValidator;
 import tools.jackson.databind.jsontype.PolymorphicTypeValidator;
 
 import java.time.Duration;
+import java.util.Map;
 
-@Configuration
+@Configuration(proxyBeanMethods = false)
 @EnableCaching
 public class RedisConfig {
 
     @Bean
     public RedisCacheManager cacheManager(RedisConnectionFactory connectionFactory) {
-
+//        PolymorphicTypeValidator ptv = BasicPolymorphicTypeValidator.builder()
+//                .allowIfBaseType(Object.class)
+//                .build();
         PolymorphicTypeValidator ptv = BasicPolymorphicTypeValidator.builder()
-                .allowIfBaseType(Object.class)
+                .allowIfBaseType("com.sprint.smartgymcore")
+                .allowIfSubType("java.util.")
+                .allowIfSubType("java.time.")
+                .allowIfSubType("java.lang.")
                 .build();
 
         JsonMapper jsonMapper = JsonMapper.builder()
@@ -37,13 +43,20 @@ public class RedisConfig {
 
         RedisCacheConfiguration defaultConfig = RedisCacheConfiguration.defaultCacheConfig()
                 .entryTtl(Duration.ofMinutes(10))
-                .computePrefixWith(cacheName -> cacheName + "::")
+//                .computePrefixWith(cacheName -> cacheName + "::") REMOVED IT BECAUSE IT ALREADY PRE-DEFINED
                 .serializeKeysWith(RedisSerializationContext.SerializationPair.fromSerializer(RedisSerializer.string()))
                 .serializeValuesWith(RedisSerializationContext.SerializationPair.fromSerializer(jsonSerializer))
                 .disableCachingNullValues();
 
+        Map<String, RedisCacheConfiguration> cacheConfigurations = Map.of(
+                "zones", defaultConfig.entryTtl(Duration.ofHours(24)),
+                "clientStats", defaultConfig.entryTtl(Duration.ofMinutes(15))
+        );
+
         return RedisCacheManager.builder(connectionFactory)
                 .cacheDefaults(defaultConfig)
+                .withInitialCacheConfigurations(cacheConfigurations)
+                .transactionAware()
                 .build();
     }
 }
