@@ -29,6 +29,7 @@ public class RedisConfig {
 //                .build();
         PolymorphicTypeValidator ptv = BasicPolymorphicTypeValidator.builder()
                 .allowIfBaseType("com.sprint.smartgymcore")
+                .allowIfSubType("com.sprint.smartgymcore")
                 .allowIfSubType("java.util.")
                 .allowIfSubType("java.time.")
                 .allowIfSubType("java.lang.")
