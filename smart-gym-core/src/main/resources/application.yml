@@ -12,6 +12,10 @@ spring:
     livereload:
       enabled: true
 
+  jackson:
+    mapper:
+      accept-case-insensitive-enums: true
+
   threads:
     virtual:
       enabled: true
