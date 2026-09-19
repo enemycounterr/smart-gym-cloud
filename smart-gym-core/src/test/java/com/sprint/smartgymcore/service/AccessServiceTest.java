@@ -8,6 +8,7 @@ import com.sprint.smartgymcore.exceptions.ZoneAccessDeniedException;
 import com.sprint.smartgymcore.external.client.ClientApiClient;
 import com.sprint.smartgymcore.external.client.ClientResponse;
 import com.sprint.smartgymcore.mapper.AccessMapper;
+import com.sprint.smartgymcore.messaging.event.outbound.AccessRegisterEvent;
 import com.sprint.smartgymcore.metrics.service.MetricsService;
 import com.sprint.smartgymcore.model.AccessCard;
 import com.sprint.smartgymcore.model.AccessDirection;
@@ -25,6 +26,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.cache.Cache;
 import org.springframework.cache.CacheManager;
+import org.springframework.context.ApplicationEventPublisher;
 
 import java.time.Instant;
 import java.util.HashSet;
@@ -45,12 +47,11 @@ public class AccessServiceTest {
     private AccessZoneRepository accessZoneRepository;
     @Mock
     private AccessMapper accessMapper;
+
     @Mock
-    private RabbitTemplate rabbitTemplate;
+    private ApplicationEventPublisher eventPublisher;
     @Mock
     private MetricsService metricsService;
-    @Mock
-    private NotificationRabbitProperties notificationRabbitProperties;
 
     @InjectMocks
     private AccessService accessService;
@@ -76,13 +77,6 @@ public class AccessServiceTest {
                 .build();
     }
 
-    private void mockNotificationRabbitProperties() {
-        NotificationRabbitProperties.RoutingKeys routingKeys = mock(NotificationRabbitProperties.RoutingKeys.class);
-        when(notificationRabbitProperties.exchange()).thenReturn("gym.events");
-        when(notificationRabbitProperties.routingKeys()).thenReturn(routingKeys);
-        when(routingKeys.accessRegistered()).thenReturn("gym.access.registered");
-    }
-
     @Test
     @DisplayName("registerAccess: should throw ZoneAccessDeniedException on sequential IN swipes (anti-passback)")
     public void registerAccess_whenDoubleIn_shouldThrowZoneAccessDeniedException() {
@@ -105,7 +99,7 @@ public class AccessServiceTest {
         when(accessLogRepository.findFirstByClientIdOrderByTimeStampDesc(1L)).thenReturn(Optional.of(lastLog));
 
         assertThrows(ZoneAccessDeniedException.class, () -> accessService.registerAccess(request));
-        verifyNoInteractions(rabbitTemplate, metricsService);
+        verifyNoInteractions(eventPublisher, metricsService);
     }
 
     @Test
@@ -129,7 +123,7 @@ public class AccessServiceTest {
         when(accessLogRepository.findFirstByClientIdOrderByTimeStampDesc(1L)).thenReturn(Optional.of(lastLog));
 
         assertThrows(ZoneAccessDeniedException.class, () -> accessService.registerAccess(request));
-        verifyNoInteractions(rabbitTemplate, metricsService);
+        verifyNoInteractions(eventPublisher, metricsService);
     }
 
     @Test
@@ -172,7 +166,7 @@ public class AccessServiceTest {
         when(accessMapper.toEntity(request, 1L, zone)).thenReturn(savedLog);
         when(accessLogRepository.save(savedLog)).thenReturn(savedLog);
         when(accessMapper.toDto(savedLog, "Danek")).thenReturn(expectedResponse);
-        mockNotificationRabbitProperties();
+
 
         AccessLogResponse result = accessService.registerAccess(request);
 
@@ -182,7 +176,7 @@ public class AccessServiceTest {
 
         verify(accessLogRepository).save(savedLog);
         verify(metricsService).incrementAccessEventReceived(AccessDirection.IN);
-        verify(rabbitTemplate).convertAndSend(eq("gym.events"), eq("gym.access.registered"), any(Object.class));
+        verify(eventPublisher).publishEvent(any(AccessRegisterEvent.class));
     }
 
 }

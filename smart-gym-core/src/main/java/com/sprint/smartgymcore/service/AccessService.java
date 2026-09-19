@@ -1,7 +1,6 @@
 package com.sprint.smartgymcore.service;
 
 
-import com.sprint.smartgymcore.config.rabbitmq.notification.NotificationRabbitProperties;
 import com.sprint.smartgymcore.dto.access.AccessCheckRequest;
 import com.sprint.smartgymcore.dto.access.AccessLogResponse;
 import com.sprint.smartgymcore.dto.access.ClientAccessStatsResponse;
@@ -25,9 +24,9 @@ import com.sprint.smartgymcore.repository.AccessLogRepository;
 import com.sprint.smartgymcore.repository.AccessZoneRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -49,11 +48,9 @@ public class AccessService {
 
     private final AccessMapper accessMapper;
 
-    private final RabbitTemplate rabbitTemplate;
-
+    private final ApplicationEventPublisher eventPublisher;
     private final MetricsService metricsService;
 
-    private final NotificationRabbitProperties notificationRabbitProperties;
     private final ClientApiClient clientApiClient;
 
     @Transactional
@@ -186,12 +183,8 @@ public class AccessService {
                 savedLog.getTimeStamp()
         );
 
-        log.info("Access successfully registered, sending event to RabbitMQ");
-        this.rabbitTemplate.convertAndSend(
-                notificationRabbitProperties.exchange(),
-                notificationRabbitProperties.routingKeys().accessRegistered(),
-                event
-        );
+        log.info("Access validated. Publishing internal event to be handled after commit");
+        this.eventPublisher.publishEvent(event);
 
         return accessMapper.toDto(savedLog, currentClientName);
     }
