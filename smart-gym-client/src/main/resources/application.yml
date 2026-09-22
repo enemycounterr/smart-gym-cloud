@@ -60,6 +60,9 @@ app:
       created: "client.event.created"
       status-changed: "client.event.status.changed"
 
+jwt:
+  secret: ${JWT_SECRET:v9y$B&E)H@MbQeThWmZq4t7w!z%C*F-JaNdRfUjXn2r5u8x/A?D(G+KbPeShVkYp}
+
 management:
   tracing:
     enabled: true

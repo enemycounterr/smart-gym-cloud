@@ -11,6 +11,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -24,6 +25,7 @@ public class ClientController {
     private final ClientService clientService;
 
     @GetMapping
+    @PreAuthorize("hasAnyRole('ADMIN','GUARD')")
     public ResponseEntity<Page<ClientResponse>> getAllClients(
             @RequestParam(required = false) String search,
             @PageableDefault(size = 10, sort = "id") Pageable pageable
@@ -42,16 +44,19 @@ public class ClientController {
     }
 
     @PostMapping
+    @PreAuthorize("hasRole('ADMIN')")
     public ClientResponse create(@Valid @RequestBody ClientCreateRequest request) {
         return this.clientService.createClient(request);
     }
 
     @PatchMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ClientResponse update(@PathVariable Long id, @Valid @RequestBody ClientUpdateRequest request) {
         return this.clientService.updateClient(id, request);
     }
 
     @PatchMapping("/{id}/status")
+    @PreAuthorize("hasRole('ADMIN')")
     public ClientResponse changeStatus(@PathVariable Long id, @RequestParam boolean active) {
         return this.clientService.toggleClientStatus(id, active);
     }
