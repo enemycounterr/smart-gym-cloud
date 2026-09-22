@@ -1,7 +1,6 @@
 package com.sprint.auth.config;
 
 
-
 import com.sprint.auth.model.User;
 import com.sprint.auth.repository.UserRepository;
 import org.springframework.context.annotation.Bean;
@@ -27,9 +26,10 @@ public class ApplicationConfig {
     public UserDetailsService userDetailsService() {
         return identifier -> {
             Optional<User> byUsername = userRepository.findByUsername(identifier);
-            return byUsername.orElseGet(() -> userRepository.findByEmail(identifier)
-                    .orElseThrow(() -> new UsernameNotFoundException("User not found: " + identifier)));
 
+            return byUsername.orElseGet(() -> userRepository.findByEmail(identifier)
+                    .orElseThrow(() -> new UsernameNotFoundException("User not found: " + identifier))
+            );
         };
     }
 

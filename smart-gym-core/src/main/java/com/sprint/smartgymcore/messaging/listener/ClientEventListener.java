@@ -26,7 +26,6 @@ public class ClientEventListener {
         }
     }
 
-
     @RabbitListener(queues = "${app.rabbitmq.client.queues.client-status}")
     public void handleClientStatusChanged(ClientStatusChangedEvent event) {
         log.info("RabbitMQ [INBOUND]: Caught ClientStatusChangedEvent for clientId={}, isActive={}",

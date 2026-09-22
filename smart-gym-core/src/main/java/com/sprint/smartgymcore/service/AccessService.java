@@ -110,18 +110,17 @@ public class AccessService {
     @Transactional
     public void grantAccessToZone(Long clientId, Long zoneId) {
 
+        //VALIDATE THAT THE CLIENT EXIST
         fetchClientSafely(clientId);
 
+        AccessZone zone = accessZoneRepository.findById(zoneId)
+                .orElseThrow(() -> new ResourceNotFoundException("Zone not found with ID: " + zoneId));
+
         if (this.accessZoneRepository.hasClientAccess(zoneId, clientId)) {
-            AccessZone zone = accessZoneRepository.findById(zoneId)
-                    .orElseThrow(() -> new ResourceNotFoundException("Zone not found with ID: " + zoneId));
             throw new AccessAlreadyGrantedException(
                     "Client with ID " + clientId + " already has access to zone " + zone.getZoneName()
             );
         }
-
-        AccessZone zone = accessZoneRepository.findById(zoneId)
-                .orElseThrow(() -> new ResourceNotFoundException("Zone not found with ID: " + zoneId));
 
         zone.getClientIds().add(clientId);
         this.accessZoneRepository.save(zone);
@@ -131,6 +130,10 @@ public class AccessService {
     public void revokeAccessFromZone(Long clientId, Long zoneId) {
         AccessZone zone = accessZoneRepository.findById(zoneId)
                 .orElseThrow(() -> new ResourceNotFoundException("Zone not found with ID: " + zoneId));
+
+        if (!zone.getClientIds().contains(clientId)) {
+            throw new ResourceNotFoundException("Client " + clientId + " does not have access to zone " + zoneId);
+        }
 
         zone.getClientIds().remove(clientId);
         this.accessZoneRepository.save(zone);
@@ -183,7 +186,7 @@ public class AccessService {
                 savedLog.getTimeStamp()
         );
 
-        log.info("Access validated. Publishing internal event to be handled after commit");
+        log.info("Access validated. Publishing internal event to be handled AFTER COMMIT");
         this.eventPublisher.publishEvent(event);
 
         return accessMapper.toDto(savedLog, currentClientName);
