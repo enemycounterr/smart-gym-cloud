@@ -98,9 +98,11 @@ app:
       queues:
         client-created: "access.client.created.queue"
         client-status: "access.client.status.queue"
+        client-updated: "access.client.updated.queue"
       routing-keys:
         created: "client.event.created"
         status-changed: "client.event.status.changed"
+        updated: "client.event.updated"
 
     notification:
       exchange: "gym.events"

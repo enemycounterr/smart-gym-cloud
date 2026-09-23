@@ -10,6 +10,7 @@ public record RabbitMqProperties(
 ) {
     public record RoutingKeys(
             String created,
-            String statusChanged
+            String statusChanged,
+            String updated
     ){}
 }

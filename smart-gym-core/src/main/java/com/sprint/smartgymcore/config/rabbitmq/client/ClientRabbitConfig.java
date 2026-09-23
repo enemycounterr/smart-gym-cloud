@@ -28,6 +28,11 @@ public class ClientRabbitConfig {
     }
 
     @Bean
+    public Queue clientUpdatedQueue(ClientRabbitProperties props){
+        return new Queue(props.queues().clientUpdated(), true);
+    }
+
+    @Bean
     public Binding bindingClientCreated(Queue clientCreatedQueue, DirectExchange clientDirectExchange, ClientRabbitProperties props) {
         return BindingBuilder.bind(clientCreatedQueue).to(clientDirectExchange).with(props.routingKeys().created());
     }
@@ -36,4 +41,10 @@ public class ClientRabbitConfig {
     public Binding bindingClientStatus(Queue clientStatusQueue, DirectExchange clientDirectExchange, ClientRabbitProperties props) {
         return BindingBuilder.bind(clientStatusQueue).to(clientDirectExchange).with(props.routingKeys().statusChanged());
     }
+
+    @Bean
+    public Binding bindingClientUpdated(Queue clientUpdatedQueue, DirectExchange clientDirectExchange, ClientRabbitProperties props) {
+        return BindingBuilder.bind(clientUpdatedQueue).to(clientDirectExchange).with(props.routingKeys().updated());
+    }
+
 }

@@ -13,6 +13,7 @@ import com.sprint.smartgymcore.external.client.ClientResponse;
 import com.sprint.smartgymcore.mapper.AccessMapper;
 import com.sprint.smartgymcore.messaging.event.inbound.client.ClientCreatedEvent;
 import com.sprint.smartgymcore.messaging.event.inbound.client.ClientStatusChangedEvent;
+import com.sprint.smartgymcore.messaging.event.inbound.client.ClientUpdatedEvent;
 import com.sprint.smartgymcore.messaging.event.outbound.AccessRegisterEvent;
 import com.sprint.smartgymcore.metrics.service.MetricsService;
 import com.sprint.smartgymcore.model.AccessCard;
@@ -84,6 +85,26 @@ public class AccessService {
                     accessCardRepository.save(card);
                     log.info("Updated Access Card status to {} for clientId: {}", event.isActive(), event.clientId());
                 }, () -> log.warn("Cannot update status: Access card not found for clientId: {}", event.clientId()));
+    }
+
+    @Transactional
+    @CacheEvict(value = "clientStats", key = "#event.clientId()")
+    public void processClientUpdated(ClientUpdatedEvent event) {
+        log.info("Received event to update client info for clientId: {}", event.clientId());
+
+        accessCardRepository.findByClientId(event.clientId())
+                .ifPresentOrElse(card -> {
+                    if (event.name() != null && !event.name().equalsIgnoreCase(card.getClientName())) {
+                        card.setClientName(event.name());
+
+                        accessCardRepository.save(card);
+
+                        log.info("Updated Access Card clientName to '{}' for clientId: {}", event.name(), event.clientId());
+
+                    } else {
+                        log.info("Name unchanged for clientId: {}, skipping update", event.clientId());
+                    }
+                }, () -> log.warn("Cannot update name: Access card not found for clientId: {}", event.clientId()));
     }
 
     @Transactional(readOnly = true)

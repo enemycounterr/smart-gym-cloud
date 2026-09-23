@@ -8,6 +8,6 @@ public record ClientRabbitProperties(
         Queues queues,
         RoutingKeys routingKeys
 ) {
-    public record Queues(String clientCreated, String clientStatus) {}
-    public record RoutingKeys(String created, String statusChanged) {}
+    public record Queues(String clientCreated, String clientStatus, String clientUpdated) {}
+    public record RoutingKeys(String created, String statusChanged, String updated) {}
 }

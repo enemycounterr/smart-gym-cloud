@@ -10,6 +10,7 @@ import com.sprint.client.exception.ResourceNotFoundException;
 import com.sprint.client.mapper.ClientMapper;
 import com.sprint.client.messaging.event.ClientCreatedEvent;
 import com.sprint.client.messaging.event.ClientStatusChangedEvent;
+import com.sprint.client.messaging.event.ClientUpdatedEvent;
 import com.sprint.client.model.Client;
 import com.sprint.client.repository.ClientRepository;
 import com.sprint.client.specification.ClientSpecification;
@@ -92,18 +93,38 @@ public class ClientService {
         Client client = this.clientRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Client not found with ID: " + id));
 
-        if (request.name() != null) {
+        boolean isModified = false;
+
+        if (request.name() != null && !request.name().equalsIgnoreCase(client.getName())) {
             client.setName(request.name());
+            isModified = true;
         }
 
-        if (request.email() != null) {
-            if (!client.getEmail().equalsIgnoreCase(request.email()) && clientRepository.existsByEmail(request.email())) {
+        if (request.email() != null && !request.email().equalsIgnoreCase(client.getEmail())) {
+
+            if (clientRepository.existsByEmail(request.email())) {
                 throw new ClientAlreadyExistException("Email " + request.email() + " is already taken");
             }
             client.setEmail(request.email());
+
+            isModified = true;
         }
 
         Client updatedClient = this.clientRepository.save(client);
+
+        if (isModified){
+            ClientUpdatedEvent event = new ClientUpdatedEvent(
+                    updatedClient.getId(),
+                    updatedClient.getName(),
+                    updatedClient.getEmail()
+            );
+
+            rabbitTemplate.convertAndSend(
+                    rabbitMqProperties.exchange(),
+                    rabbitMqProperties.routingKeys().updated(),
+                    event
+            );
+        }
 
         return clientMapper.toDto(updatedClient);
 
