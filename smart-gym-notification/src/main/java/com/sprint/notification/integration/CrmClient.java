@@ -2,7 +2,10 @@ package com.sprint.notification.integration;
 
 
 import com.sprint.notification.exception.CrmIntegrationException;
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
+import io.github.resilience4j.retry.annotation.Retry;
 import io.micrometer.observation.ObservationRegistry;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
 import org.springframework.http.client.SimpleClientHttpRequestFactory;
@@ -10,6 +13,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientException;
 
+@Slf4j
 @Service
 public class CrmClient {
 
@@ -28,27 +32,27 @@ public class CrmClient {
                 .build();
     }
 
+    @Retry(name = "crmService")
+    @CircuitBreaker(name = "crmService", fallbackMethod = "sendLoyaltyPointsFallback")
     public void sendLoyaltyPoints(Long clientId, String clientName) {
-        try {
-            this.restClient.post()
-                    .uri("/post")
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .body("""
+        this.restClient.post()
+                .uri("/post")
+                .contentType(MediaType.APPLICATION_JSON)
+                .body("""
                             {
                                 "clientId": %d,
                                 "name": "%s",
                                 "points": 10
                             }
                             """.formatted(clientId, clientName))
-                    .retrieve()
-                    .toBodilessEntity();
+                .retrieve()
+                .toBodilessEntity();
+    }
 
-        } catch (RestClientException e) {
-            String errorType = (e.getMessage() != null && e.getMessage().toLowerCase().contains("timeout"))
-                    ? "TIMEOUT"
-                    : "REST_CLIENT_ERROR";
+    public void sendLoyaltyPointsFallback(Long clientId, String clientName, Throwable t) {
+        log.error("Circuit Breaker [crmService] triggered for clientId: {} ({}). Reason: {}",
+                clientId, clientName, t.getMessage());
 
-            throw new CrmIntegrationException("Failed to send data to CRM: " + e.getMessage());
-        }
+        throw new CrmIntegrationException("CRM integration failed (Circuit Breaker): " + t.getMessage(), t);
     }
 }
