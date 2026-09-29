@@ -64,7 +64,13 @@ management:
   endpoints:
     web:
       exposure:
-        include: health,metrics,prometheus,beans
+        include: health,metrics,prometheus,beans,circuitbreakers,circuitbreakerevents
+  endpoint:
+    health:
+      show-details: always
+  health:
+    circuitbreakers:
+      enabled: true
   metrics:
     export:
       prometheus:
@@ -82,6 +88,31 @@ management:
       zipkin:
         endpoint: ${ZIPKIN_URL:http://localhost:9411/api/v2/spans}
 
+resilience4j:
+  circuitbreaker:
+    instances:
+      clientService:
+        register-health-indicator: true
+        sliding-window-type: COUNT_BASED
+        sliding-window-size: 10
+        minimum-number-of-calls: 5
+        failure-rate-threshold: 50
+        wait-duration-in-open-state: 10s
+        permitted-number-of-calls-in-half-open-state: 3
+        automatic-transition-from-open-to-half-open-enabled: true
+        record-exceptions:
+          - org.springframework.web.client.RestClientException
+          - java.io.IOException
+          - java.util.concurrent.TimeoutException
+        ignore-exceptions:
+          - com.sprint.smartgymcore.exceptions.ResourceNotFoundException
+  retry:
+    instances:
+      clientService:
+        max-attempts: 3
+        wait-duration: 500ms
+        retry-exceptions:
+          - org.springframework.web.client.ResourceAccessException
 logging:
   include-application-name: false
   pattern:

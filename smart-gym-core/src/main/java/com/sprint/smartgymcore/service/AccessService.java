@@ -8,7 +8,7 @@ import com.sprint.smartgymcore.dto.access.ClientInsideResponse;
 import com.sprint.smartgymcore.exceptions.AccessAlreadyGrantedException;
 import com.sprint.smartgymcore.exceptions.ResourceNotFoundException;
 import com.sprint.smartgymcore.exceptions.ZoneAccessDeniedException;
-import com.sprint.smartgymcore.external.client.ClientApiClient;
+import com.sprint.smartgymcore.external.client.ClientExternalService;
 import com.sprint.smartgymcore.external.client.ClientResponse;
 import com.sprint.smartgymcore.mapper.AccessMapper;
 import com.sprint.smartgymcore.messaging.event.inbound.client.ClientCreatedEvent;
@@ -52,7 +52,7 @@ public class AccessService {
     private final ApplicationEventPublisher eventPublisher;
     private final MetricsService metricsService;
 
-    private final ClientApiClient clientApiClient;
+    private final ClientExternalService clientExternalService;
 
     @Transactional
     public void processClientCreated(ClientCreatedEvent event) {
@@ -280,7 +280,7 @@ public class AccessService {
         }
 
         try {
-            List<ClientResponse> clients = clientApiClient.getClientsByIds(clientIds);
+            List<ClientResponse> clients = clientExternalService.getClientsByIds(clientIds);
 
             return clients.stream()
                     .collect(Collectors.toMap(ClientResponse::id, Function.identity()));
@@ -292,7 +292,7 @@ public class AccessService {
 
     private ClientResponse fetchClientSafely(Long clientId) {
         try {
-            return clientApiClient.getClientById(clientId);
+            return clientExternalService.getClientById(clientId);
         } catch (RestClientResponseException e) {
             if (e.getStatusCode().value() == 404) {
                 throw new ResourceNotFoundException("Client not found with ID: " + clientId);

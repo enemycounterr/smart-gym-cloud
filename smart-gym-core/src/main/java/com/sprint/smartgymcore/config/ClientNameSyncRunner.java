@@ -1,6 +1,7 @@
 package com.sprint.smartgymcore.config;
 
 import com.sprint.smartgymcore.external.client.ClientApiClient;
+import com.sprint.smartgymcore.external.client.ClientExternalService;
 import com.sprint.smartgymcore.external.client.ClientResponse;
 import com.sprint.smartgymcore.model.AccessCard;
 import com.sprint.smartgymcore.repository.AccessCardRepository;
@@ -21,7 +22,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class ClientNameSyncRunner implements ApplicationRunner {
     private final AccessCardRepository accessCardRepository;
-    private final ClientApiClient clientApiClient;
+    private final ClientExternalService clientExternalService;
 
     @Override
     public void run(ApplicationArguments args) throws Exception {
@@ -39,7 +40,7 @@ public class ClientNameSyncRunner implements ApplicationRunner {
                     .map(AccessCard::getClientId)
                     .collect(Collectors.toSet());
 
-            List<ClientResponse> clients = clientApiClient.getClientsByIds(clientIds);
+            List<ClientResponse> clients = clientExternalService.getClientsByIds(clientIds);
 
             Map<Long, ClientResponse> clientMap = clients.stream()
                     .collect(Collectors.toMap(ClientResponse::id, Function.identity()));
