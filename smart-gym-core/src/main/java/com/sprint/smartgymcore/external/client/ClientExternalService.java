@@ -22,8 +22,8 @@ public class ClientExternalService {
 
     private final ClientApiClient clientApiClient;
 
-    @Retry(name = "clientService")
-    @CircuitBreaker(name = "clientService", fallbackMethod = "getClientByIdFallback")
+    @Retry(name = "clientService", fallbackMethod = "getClientByIdFallback")
+    @CircuitBreaker(name = "clientService")
     public ClientResponse getClientById(Long id) {
         try {
             return clientApiClient.getClientById(id);

@@ -106,11 +106,14 @@ resilience4j:
           - java.util.concurrent.TimeoutException
         ignore-exceptions:
           - com.sprint.smartgymcore.exceptions.ResourceNotFoundException
+          - org.springframework.web.client.HttpClientErrorException
   retry:
     instances:
       clientService:
         max-attempts: 3
         wait-duration: 500ms
+        enable-exponential-backoff: true
+        exponential-backoff-multiplier: 2
         retry-exceptions:
           - org.springframework.web.client.ResourceAccessException
 logging:

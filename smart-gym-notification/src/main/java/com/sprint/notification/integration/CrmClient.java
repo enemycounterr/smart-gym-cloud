@@ -22,8 +22,8 @@ public class CrmClient {
     public CrmClient(@Value("${integration.crm.base-url}") String baseUrl, ObservationRegistry observationRegistry) {
 
         SimpleClientHttpRequestFactory requestFactory = new SimpleClientHttpRequestFactory();
-        requestFactory.setConnectTimeout(2000);
-        requestFactory.setReadTimeout(3000);
+        requestFactory.setConnectTimeout(1000);
+        requestFactory.setReadTimeout(1500);
 
         this.restClient = RestClient.builder()
                 .baseUrl(baseUrl)
@@ -32,8 +32,8 @@ public class CrmClient {
                 .build();
     }
 
-    @Retry(name = "crmService")
-    @CircuitBreaker(name = "crmService", fallbackMethod = "sendLoyaltyPointsFallback")
+    @Retry(name = "crmService", fallbackMethod = "sendLoyaltyPointsFallback")
+    @CircuitBreaker(name = "crmService")
     public void sendLoyaltyPoints(Long clientId, String clientName) {
         this.restClient.post()
                 .uri("/post")

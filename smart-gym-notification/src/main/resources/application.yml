@@ -29,6 +29,7 @@ integration:
   crm:
     base-url: ${INTEGRATION_CRM_BASE_URL:https://postman-echo.com}
 #    https://postman-echo.com working service
+#    http://localhost:9999 definitely dead port
 
 app:
   rabbitmq:
@@ -76,11 +77,16 @@ resilience4j:
           - org.springframework.web.client.RestClientException
           - java.io.IOException
           - java.util.concurrent.TimeoutException
+        ignore-exceptions:
+          - org.springframework.web.client.HttpClientErrorException
+
   retry:
     instances:
       crmService:
         max-attempts: 3
         wait-duration: 500ms
+        enable-exponential-backoff: true
+        exponential-backoff-multiplier: 2
         retry-exceptions:
           - org.springframework.web.client.ResourceAccessException
           - org.springframework.web.client.HttpServerErrorException
