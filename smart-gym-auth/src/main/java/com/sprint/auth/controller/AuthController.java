@@ -43,7 +43,7 @@ public class AuthController {
     }
 
     @PostMapping("/refresh")
-    public AuthResponse refresh(@RequestBody RefreshRequest request) {
+    public AuthResponse refresh(@Valid @RequestBody RefreshRequest request) {
         return this.authService.refresh(request);
     }
 

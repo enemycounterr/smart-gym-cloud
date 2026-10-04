@@ -94,7 +94,7 @@ public class AccessService {
 
         accessCardRepository.findByClientId(event.clientId())
                 .ifPresentOrElse(card -> {
-                    if (event.name() != null && !event.name().equalsIgnoreCase(card.getClientName())) {
+                    if (event.name() != null && !card.getClientName().equalsIgnoreCase(event.name())) {
                         card.setClientName(event.name());
 
                         accessCardRepository.save(card);

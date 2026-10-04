@@ -24,9 +24,6 @@ public class RedisConfig {
 
     @Bean
     public RedisCacheManager cacheManager(RedisConnectionFactory connectionFactory) {
-//        PolymorphicTypeValidator ptv = BasicPolymorphicTypeValidator.builder()
-//                .allowIfBaseType(Object.class)
-//                .build();
         PolymorphicTypeValidator ptv = BasicPolymorphicTypeValidator.builder()
                 .allowIfBaseType("com.sprint.smartgymcore")
                 .allowIfSubType("com.sprint.smartgymcore")

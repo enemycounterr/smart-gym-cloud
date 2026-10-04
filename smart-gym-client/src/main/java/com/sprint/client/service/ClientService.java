@@ -95,12 +95,12 @@ public class ClientService {
 
         boolean isModified = false;
 
-        if (request.name() != null && !request.name().equalsIgnoreCase(client.getName())) {
+        if (request.name() != null && !client.getName().equalsIgnoreCase(request.name())) {
             client.setName(request.name());
             isModified = true;
         }
 
-        if (request.email() != null && !request.email().equalsIgnoreCase(client.getEmail())) {
+        if (request.email() != null && !client.getEmail().equalsIgnoreCase(request.email())) {
 
             if (clientRepository.existsByEmail(request.email())) {
                 throw new ClientAlreadyExistException("Email " + request.email() + " is already taken");
@@ -112,7 +112,7 @@ public class ClientService {
 
         Client updatedClient = this.clientRepository.save(client);
 
-        if (isModified){
+        if (isModified) {
             ClientUpdatedEvent event = new ClientUpdatedEvent(
                     updatedClient.getId(),
                     updatedClient.getName(),
@@ -135,7 +135,7 @@ public class ClientService {
         Client client = clientRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Client not found with ID: " + id));
 
-        if (client.isActive() == isActive){
+        if (client.isActive() == isActive) {
             throw new IllegalStateException("Client already has status: " + (isActive ? "active" : "inactive"));
         }
 

@@ -35,6 +35,11 @@ public class OAuth2LoginSuccessHandler extends SimpleUrlAuthenticationSuccessHan
             email = login + "@github.com";
         }
 
+        if (login == null) {
+            response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "GitHub login attribute is missing");
+            return;
+        }
+
         AuthResponse authResponse = authService.processOAuth2PostLogin(email, login);
 
         String frontendUrl = "http://localhost:3000/oauth2/redirect";
