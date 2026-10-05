@@ -40,7 +40,7 @@ public class AccessControllerTest {
         mockMvc.perform(post("/api/v1/access/register")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(jsonRequest))
-                .andExpect(status().isOk()); // или isCreated(), в зависимости от контроллера
+                .andExpect(status().isOk());
     }
 
     @Test

@@ -1,7 +1,12 @@
 package com.sprint.smartgymcore.messaging.event.inbound.client;
 
+import java.time.Instant;
+import java.util.UUID;
+
 public record ClientUpdatedEvent(
+        UUID eventId,
         Long clientId,
         String name,
-        String email
+        String email,
+        Instant timestamp
 ) { }

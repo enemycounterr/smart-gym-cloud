@@ -16,13 +16,11 @@ import com.sprint.smartgymcore.messaging.event.inbound.client.ClientStatusChange
 import com.sprint.smartgymcore.messaging.event.inbound.client.ClientUpdatedEvent;
 import com.sprint.smartgymcore.messaging.event.outbound.AccessRegisterEvent;
 import com.sprint.smartgymcore.metrics.service.MetricsService;
-import com.sprint.smartgymcore.model.AccessCard;
-import com.sprint.smartgymcore.model.AccessDirection;
-import com.sprint.smartgymcore.model.AccessLog;
-import com.sprint.smartgymcore.model.AccessZone;
+import com.sprint.smartgymcore.model.*;
 import com.sprint.smartgymcore.repository.AccessCardRepository;
 import com.sprint.smartgymcore.repository.AccessLogRepository;
 import com.sprint.smartgymcore.repository.AccessZoneRepository;
+import com.sprint.smartgymcore.repository.ProcessedEventRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.CacheEvict;
@@ -34,6 +32,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestClientResponseException;
 
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.function.Function;
@@ -46,6 +45,7 @@ public class AccessService {
     private final AccessLogRepository accessLogRepository;
     private final AccessZoneRepository accessZoneRepository;
     private final AccessCardRepository accessCardRepository;
+    private final ProcessedEventRepository processedEventRepository;
 
     private final AccessMapper accessMapper;
 
@@ -53,59 +53,6 @@ public class AccessService {
     private final MetricsService metricsService;
 
     private final ClientExternalService clientExternalService;
-
-    @Transactional
-    public void processClientCreated(ClientCreatedEvent event) {
-        log.info("Received event to create Access Card for clientId: {}", event.clientId());
-
-        String generatedToken = "RFID-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
-
-        AccessCard card = AccessCard.builder()
-                .rfidToken(generatedToken)
-                .clientId(event.clientId())
-                .clientName(event.name())
-                .isActive(true)
-                .issuedAt(LocalDateTime.now())
-                .build();
-
-        accessCardRepository.save(card);
-        log.info("Successfully created Access Card [{}] for clientId: {}", generatedToken, event.clientId());
-    }
-
-    @Transactional
-    public void processClientStatusChanged(ClientStatusChangedEvent event) {
-        log.info(
-                "Received event to update Access Card status for clientId: {}. New status: {}",
-                event.clientId(), event.isActive()
-        );
-
-        accessCardRepository.findByClientId(event.clientId())
-                .ifPresentOrElse(card -> {
-                    card.setActive(event.isActive());
-                    accessCardRepository.save(card);
-                    log.info("Updated Access Card status to {} for clientId: {}", event.isActive(), event.clientId());
-                }, () -> log.warn("Cannot update status: Access card not found for clientId: {}", event.clientId()));
-    }
-
-    @Transactional
-    @CacheEvict(value = "clientStats", key = "#event.clientId()")
-    public void processClientUpdated(ClientUpdatedEvent event) {
-        log.info("Received event to update client info for clientId: {}", event.clientId());
-
-        accessCardRepository.findByClientId(event.clientId())
-                .ifPresentOrElse(card -> {
-                    if (event.name() != null && !card.getClientName().equalsIgnoreCase(event.name())) {
-                        card.setClientName(event.name());
-
-                        accessCardRepository.save(card);
-
-                        log.info("Updated Access Card clientName to '{}' for clientId: {}", event.name(), event.clientId());
-
-                    } else {
-                        log.info("Name unchanged for clientId: {}, skipping update", event.clientId());
-                    }
-                }, () -> log.warn("Cannot update name: Access card not found for clientId: {}", event.clientId()));
-    }
 
     @Transactional(readOnly = true)
     public Page<AccessLogResponse> getAllLogs(Pageable pageable) {
@@ -272,6 +219,99 @@ public class AccessService {
                 ));
 
         return card.getRfidToken();
+    }
+
+    @Transactional
+    public void processClientCreated(ClientCreatedEvent event) {
+
+        if (isAlreadyProcessed(event.eventId())) {
+            log.info("Duplicate ClientCreatedEvent [eventId={}] for clientId={}. Skipping.",
+                    event.eventId(), event.clientId());
+            return;
+        }
+
+        log.info("Received event to create Access Card for clientId: {}", event.clientId());
+
+        String generatedToken = "RFID-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
+
+        AccessCard card = AccessCard.builder()
+                .rfidToken(generatedToken)
+                .clientId(event.clientId())
+                .clientName(event.name())
+                .isActive(true)
+                .issuedAt(LocalDateTime.now())
+                .build();
+
+        accessCardRepository.save(card);
+        markAsProcessed(event.eventId(), "ClientCreated");
+        log.info("Successfully created Access Card [{}] for clientId: {}", generatedToken, event.clientId());
+    }
+
+    @Transactional
+    public void processClientStatusChanged(ClientStatusChangedEvent event) {
+
+        if (isAlreadyProcessed(event.eventId())) {
+            log.info("Duplicate ClientStatusChangedEvent [eventId={}] for clientId={}. Skipping.",
+                    event.eventId(), event.clientId());
+            return;
+        }
+
+        log.info(
+                "Received event to update Access Card status for clientId: {}. New status: {}",
+                event.clientId(), event.isActive()
+        );
+
+        accessCardRepository.findByClientId(event.clientId())
+                .ifPresentOrElse(card -> {
+                    card.setActive(event.isActive());
+                    accessCardRepository.save(card);
+                    markAsProcessed(event.eventId(), "ClientStatusChanged");
+                    log.info("Updated Access Card status to {} for clientId: {}", event.isActive(), event.clientId());
+                }, () -> log.warn("Cannot update status: Access card not found for clientId: {}", event.clientId()));
+    }
+
+    @Transactional
+    @CacheEvict(value = "clientStats", key = "#event.clientId()")
+    public void processClientUpdated(ClientUpdatedEvent event) {
+
+        if (isAlreadyProcessed(event.eventId())) {
+            log.info("Duplicate ClientUpdatedEvent [eventId={}] for clientId={}. Skipping.", event.eventId(), event.clientId());
+            return;
+        }
+
+        log.info("Received event to update client info for clientId: {}", event.clientId());
+
+        accessCardRepository.findByClientId(event.clientId())
+                .ifPresentOrElse(card -> {
+                    if (event.name() != null && !card.getClientName().equalsIgnoreCase(event.name())) {
+                        card.setClientName(event.name());
+
+                        accessCardRepository.save(card);
+
+                        log.info("Updated Access Card clientName to '{}' for clientId: {}", event.name(), event.clientId());
+
+                    } else {
+                        log.info("Name unchanged for clientId: {}, skipping update", event.clientId());
+                    }
+                    markAsProcessed(event.eventId(), "ClientUpdated");
+                }, () -> log.warn("Cannot update name: Access card not found for clientId: {}", event.clientId()));
+    }
+
+    private boolean isAlreadyProcessed(UUID eventId) {
+        if (eventId == null) {
+            return false;
+        }
+        return processedEventRepository.existsById(eventId);
+    }
+
+    private void markAsProcessed(UUID eventId, String eventType) {
+        if (eventId != null) {
+            processedEventRepository.save(ProcessedEvent.builder()
+                    .eventId(eventId)
+                    .eventType(eventType)
+                    .processedAt(Instant.now())
+                    .build());
+        }
     }
 
     private Map<Long, ClientResponse> getClientsBatch(Set<Long> clientIds) {
