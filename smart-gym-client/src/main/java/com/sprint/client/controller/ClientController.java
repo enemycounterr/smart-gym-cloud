@@ -61,7 +61,4 @@ public class ClientController {
         return this.clientService.toggleClientStatus(id, active);
     }
 
-
-
-
 }

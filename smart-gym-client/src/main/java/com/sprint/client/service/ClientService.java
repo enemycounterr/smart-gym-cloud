@@ -15,15 +15,16 @@ import com.sprint.client.model.Client;
 import com.sprint.client.repository.ClientRepository;
 import com.sprint.client.specification.ClientSpecification;
 import lombok.RequiredArgsConstructor;
-import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Set;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -31,8 +32,7 @@ public class ClientService {
 
     private final ClientRepository clientRepository;
     private final ClientMapper clientMapper;
-    private final RabbitTemplate rabbitTemplate;
-
+    private final OutboxService outboxService;
     private final RabbitMqProperties rabbitMqProperties;
 
     @Transactional
@@ -44,15 +44,23 @@ public class ClientService {
         Client newClient = clientMapper.toEntity(request);
         Client savedClient = clientRepository.save(newClient);
 
+        UUID eventId = UUID.randomUUID();
+        Instant now = Instant.now();
+
         ClientCreatedEvent event = new ClientCreatedEvent(
+                eventId,
                 savedClient.getId(),
                 savedClient.getName(),
-                savedClient.getEmail()
+                savedClient.getEmail(),
+                now
         );
 
-        this.rabbitTemplate.convertAndSend(
-                rabbitMqProperties.exchange(),
-                rabbitMqProperties.routingKeys().created(),
+        this.outboxService.saveEvent(
+                eventId,
+                "CLIENT",
+                savedClient.getId().toString(),
+                "ClientCreated",
+                this.rabbitMqProperties.routingKeys().created(),
                 event
         );
 
@@ -113,15 +121,25 @@ public class ClientService {
         Client updatedClient = this.clientRepository.save(client);
 
         if (isModified) {
+
+            UUID eventId = UUID.randomUUID();
+
+            Instant now = Instant.now();
+
             ClientUpdatedEvent event = new ClientUpdatedEvent(
+                    eventId,
                     updatedClient.getId(),
                     updatedClient.getName(),
-                    updatedClient.getEmail()
+                    updatedClient.getEmail(),
+                    now
             );
 
-            rabbitTemplate.convertAndSend(
-                    rabbitMqProperties.exchange(),
-                    rabbitMqProperties.routingKeys().updated(),
+            this.outboxService.saveEvent(
+                    eventId,
+                    "CLIENT",
+                    updatedClient.getId().toString(),
+                    "ClientUpdatedEvent",
+                    this.rabbitMqProperties.routingKeys().updated(),
                     event
             );
         }
@@ -142,10 +160,22 @@ public class ClientService {
         client.setActive(isActive);
         Client updatedClient = clientRepository.save(client);
 
-        ClientStatusChangedEvent event = new ClientStatusChangedEvent(updatedClient.getId(), updatedClient.isActive());
-        this.rabbitTemplate.convertAndSend(
-                rabbitMqProperties.exchange(),
-                rabbitMqProperties.routingKeys().statusChanged(),
+        UUID eventId = UUID.randomUUID();
+        Instant now = Instant.now();
+
+        ClientStatusChangedEvent event = new ClientStatusChangedEvent(
+                eventId,
+                updatedClient.getId(),
+                updatedClient.isActive(),
+                now
+        );
+
+        this.outboxService.saveEvent(
+                eventId,
+                "CLIENT",
+                updatedClient.getId().toString(),
+                "ClientStatusChangedEvent",
+                this.rabbitMqProperties.routingKeys().statusChanged(),
                 event
         );
 
