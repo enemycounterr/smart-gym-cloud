@@ -1,0 +1,38 @@
+name: Client Service CI
+
+on:
+  push:
+    branches: [ "main" ]
+    paths:
+      - "smart-gym-client/**"
+      - ".github/workflows/client-ci.yml"
+  pull_request:
+    branches: [ "main" ]
+    paths:
+      - "smart-gym-client/**"
+      - ".github/workflows/client-ci.yml"
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: smart-gym-client
+
+    steps:
+      - name: Checkout Source Code
+        uses: actions/checkout@v4
+
+      - name: Set up Java 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: maven
+
+      - name: Make wrapper executable
+        run: chmod +x mvnw
+
+      - name: Build and Test with Maven
+        run: ./mvnw clean package

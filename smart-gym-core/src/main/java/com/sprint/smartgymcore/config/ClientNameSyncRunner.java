@@ -1,6 +1,5 @@
 package com.sprint.smartgymcore.config;
 
-import com.sprint.smartgymcore.external.client.ClientApiClient;
 import com.sprint.smartgymcore.external.client.ClientExternalService;
 import com.sprint.smartgymcore.external.client.ClientResponse;
 import com.sprint.smartgymcore.model.AccessCard;
@@ -25,7 +24,7 @@ public class ClientNameSyncRunner implements ApplicationRunner {
     private final ClientExternalService clientExternalService;
 
     @Override
-    public void run(ApplicationArguments args) throws Exception {
+    public void run(ApplicationArguments args) {
         List<AccessCard> unSyncedCards = accessCardRepository.findAllByClientName("Unknown Client");
 
         if (unSyncedCards.isEmpty()) {
