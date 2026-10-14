@@ -1,4 +1,4 @@
-package com.sprint.client.model;
+package com.sprint.client.outbox.model;
 
 public enum OutboxStatus {
     PENDING,

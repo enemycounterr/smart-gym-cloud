@@ -61,6 +61,15 @@ app:
       status-changed: "client.event.status.changed"
       updated: "client.event.updated"
 
+  outbox:
+    scheduler:
+      fixed-delay: 2000
+
+    cleanup-scheduler:
+      cron: "0 0 3 * * *"
+      retention-days: 7
+      batch-size: 1000
+
 jwt:
   secret: ${JWT_SECRET:v9y$B&E)H@MbQeThWmZq4t7w!z%C*F-JaNdRfUjXn2r5u8x/A?D(G+KbPeShVkYp}
 

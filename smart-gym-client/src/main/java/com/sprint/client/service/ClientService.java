@@ -12,6 +12,7 @@ import com.sprint.client.messaging.event.ClientCreatedEvent;
 import com.sprint.client.messaging.event.ClientStatusChangedEvent;
 import com.sprint.client.messaging.event.ClientUpdatedEvent;
 import com.sprint.client.model.Client;
+import com.sprint.client.outbox.service.OutboxService;
 import com.sprint.client.repository.ClientRepository;
 import com.sprint.client.specification.ClientSpecification;
 import lombok.RequiredArgsConstructor;

@@ -1,9 +1,9 @@
-package com.sprint.client.service;
+package com.sprint.client.outbox.scheduler;
 
 import com.sprint.client.config.RabbitMqProperties;
-import com.sprint.client.model.OutboxEvent;
-import com.sprint.client.model.OutboxStatus;
-import com.sprint.client.repository.OutboxRepository;
+import com.sprint.client.outbox.model.OutboxEvent;
+import com.sprint.client.outbox.model.OutboxStatus;
+import com.sprint.client.outbox.repository.OutboxRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.core.Message;
@@ -22,30 +22,29 @@ import java.util.List;
 @RequiredArgsConstructor
 public class OutboxScheduler {
 
+    private static final int MAX_RETRY_COUNT = 5;
     private final OutboxRepository outboxRepository;
     private final RabbitTemplate rabbitTemplate;
     private final RabbitMqProperties rabbitMqProperties;
-
-    private static final int MAX_RETRY_COUNT = 5;
-
 
     /*
      * Scheduler independently polls pending outbox events and publishes them to RabbitMQ.
      */
     @Scheduled(fixedDelayString = "${app.outbox.scheduler.fixed-delay:2000}")
-    public void processOutboxEvents(){
+    public void processOutboxEvents() {
+
         List<OutboxEvent> pendingEvents = outboxRepository.findTop50ByStatusOrderByCreatedAtAsc(OutboxStatus.PENDING);
 
-        if (pendingEvents.isEmpty()){
+        if (pendingEvents.isEmpty()) {
             return;
         }
 
         log.info("Found {} pending outbox events. Starting relay to RabbitMQ", pendingEvents.size());
 
-        for(OutboxEvent event : pendingEvents){
-            try{
+        for (OutboxEvent event : pendingEvents) {
+            try {
                 sendEvent(event);
-            }catch (Exception e){
+            } catch (Exception e) {
                 log.error("Failed to relay outbox event [{}] id={}. Stopping current batch.",
                         event.getEventType(), event.getId(), e);
                 handleFailure(event, e);
