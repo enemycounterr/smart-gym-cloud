@@ -1,11 +1,10 @@
 package com.sprint.smartgymcore.service;
 
 
-import com.sprint.smartgymcore.config.rabbitmq.notification.NotificationRabbitProperties;
 import com.sprint.smartgymcore.dto.access.AccessCheckRequest;
 import com.sprint.smartgymcore.dto.access.AccessLogResponse;
 import com.sprint.smartgymcore.exceptions.ZoneAccessDeniedException;
-import com.sprint.smartgymcore.external.client.ClientApiClient;
+import com.sprint.smartgymcore.external.client.ClientExternalService;
 import com.sprint.smartgymcore.external.client.ClientResponse;
 import com.sprint.smartgymcore.mapper.AccessMapper;
 import com.sprint.smartgymcore.messaging.event.outbound.AccessRegisterEvent;
@@ -17,19 +16,22 @@ import com.sprint.smartgymcore.model.AccessZone;
 import com.sprint.smartgymcore.repository.AccessCardRepository;
 import com.sprint.smartgymcore.repository.AccessLogRepository;
 import com.sprint.smartgymcore.repository.AccessZoneRepository;
+import com.sprint.smartgymcore.repository.ProcessedEventRepository;
+import com.sprint.smartgymcore.validator.AccessRuleValidator;
+import com.sprint.smartgymcore.validator.impl.ActiveCardValidator;
+import com.sprint.smartgymcore.validator.impl.AntiPassbackValidator;
+import com.sprint.smartgymcore.validator.impl.ZonePermissionValidator;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.amqp.rabbit.core.RabbitTemplate;
-import org.springframework.cache.Cache;
-import org.springframework.cache.CacheManager;
 import org.springframework.context.ApplicationEventPublisher;
 
 import java.time.Instant;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
@@ -50,11 +52,39 @@ public class AccessServiceTest {
 
     @Mock
     private ApplicationEventPublisher eventPublisher;
+
     @Mock
     private MetricsService metricsService;
 
-    @InjectMocks
+    @Mock
+    private ClientExternalService clientExternalService;
+
+    @Mock
+    private ProcessedEventRepository processedEventRepository;
+
+
     private AccessService accessService;
+
+    @BeforeEach
+    void setUp() {
+        List<AccessRuleValidator> validators = List.of(
+                new ActiveCardValidator(),
+                new ZonePermissionValidator(accessZoneRepository),
+                new AntiPassbackValidator(accessLogRepository)
+        );
+
+        accessService = new AccessService(
+                accessLogRepository,
+                accessZoneRepository,
+                accessCardRepository,
+                processedEventRepository,
+                accessMapper,
+                eventPublisher,
+                metricsService,
+                clientExternalService,
+                validators
+        );
+    }
 
     private ClientResponse createMockClientResponse() {
         return new ClientResponse(1L, "Danek", "danek@mail.com", true);

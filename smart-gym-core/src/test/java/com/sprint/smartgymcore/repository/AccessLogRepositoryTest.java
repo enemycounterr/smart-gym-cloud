@@ -19,12 +19,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class AccessLogRepositoryTest extends BaseIntegrationTest {
 
-    @Autowired
-    private AccessLogRepository accessLogRepository;
-
-    @Autowired
-    private AccessZoneRepository accessZoneRepository;
-
     @Test
     @Transactional
     public void findCurrentClientsInside_shouldReturnOnlyClientsWithLatestInDirection() {

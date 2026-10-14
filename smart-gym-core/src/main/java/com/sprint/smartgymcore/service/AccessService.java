@@ -21,6 +21,7 @@ import com.sprint.smartgymcore.repository.AccessCardRepository;
 import com.sprint.smartgymcore.repository.AccessLogRepository;
 import com.sprint.smartgymcore.repository.AccessZoneRepository;
 import com.sprint.smartgymcore.repository.ProcessedEventRepository;
+import com.sprint.smartgymcore.validator.AccessRuleValidator;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.CacheEvict;
@@ -53,6 +54,8 @@ public class AccessService {
     private final MetricsService metricsService;
 
     private final ClientExternalService clientExternalService;
+
+    private final List<AccessRuleValidator> accessRuleValidators;
 
     @Transactional(readOnly = true)
     public Page<AccessLogResponse> getAllLogs(Pageable pageable) {
@@ -118,27 +121,13 @@ public class AccessService {
                         )
                 );
 
-        if (!card.isActive()) {
-            throw new ZoneAccessDeniedException("Access denied! Card is inactive!");
-        }
-
-        Long currentClientId = card.getClientId();
-        String currentClientName = card.getClientName();
-
         AccessZone accessZone = accessZoneRepository.findById(request.zoneId())
                 .orElseThrow(() -> new ResourceNotFoundException("Zone not found with ID: " + request.zoneId()));
 
-        if (!this.accessZoneRepository.hasClientAccess(request.zoneId(), currentClientId)) {
-            throw new ZoneAccessDeniedException("Access denied! Client '" + currentClientName +
-                    "' does not have permission for zone '" + accessZone.getZoneName() + "'");
-        }
+        this.accessRuleValidators.forEach(validator -> validator.validate(card, accessZone, request));
 
-        Optional<AccessLog> latestLog = this.accessLogRepository.findFirstByClientIdOrderByTimeStampDesc(currentClientId);
-
-        if (latestLog.isPresent() && latestLog.get().getDirection() == request.direction()) {
-            throw new ZoneAccessDeniedException("Anti-Passback violation! Client '" + currentClientName +
-                    "' already performed direction: " + request.direction());
-        }
+        Long currentClientId = card.getClientId();
+        String currentClientName = card.getClientName();
 
         AccessLog accessLog = this.accessMapper.toEntity(request, currentClientId, accessZone);
         AccessLog savedLog = this.accessLogRepository.save(accessLog);

@@ -53,7 +53,7 @@ public class AccessController {
 
     @PostMapping("/register")
     @PreAuthorize("hasAnyRole('ADMIN', 'GUARD')")
-    public AccessLogResponse register(@Valid @RequestBody AccessCheckRequest request) {
+    public AccessLogResponse registerAccess(@Valid @RequestBody AccessCheckRequest request) {
         return this.accessService.registerAccess(request);
     }
 

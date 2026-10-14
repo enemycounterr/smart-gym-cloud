@@ -31,14 +31,6 @@ public class AccessServiceIntegrationTest extends BaseIntegrationTest {
 
     @Autowired
     private AccessService accessService;
-    @Autowired
-    private AccessZoneRepository accessZoneRepository;
-    @Autowired
-    private AccessCardRepository accessCardRepository;
-    @Autowired
-    private AccessLogRepository accessLogRepository;
-    @Autowired
-    private StringRedisTemplate redisTemplate;
 
     private final Long testClientId = 666L;
     private AccessZone savedZone;
