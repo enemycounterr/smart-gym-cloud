@@ -10,6 +10,7 @@ import com.sprint.auth.model.Role;
 import com.sprint.auth.model.User;
 import com.sprint.auth.repository.RefreshTokenRepository;
 import com.sprint.auth.repository.UserRepository;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -26,6 +27,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 @Service
+@RequiredArgsConstructor
 public class AuthService {
 
     private final UserRepository userRepository;
@@ -37,13 +39,13 @@ public class AuthService {
     @Value("${jwt.refresh-expiration-days}")
     private long refreshExpirationDays;
 
-    public AuthService(UserRepository userRepository, JwtService jwtService, AuthenticationManager authenticationManager, PasswordEncoder passwordEncoder, RefreshTokenRepository refreshTokenRepository) {
-        this.userRepository = userRepository;
-        this.jwtService = jwtService;
-        this.authenticationManager = authenticationManager;
-        this.passwordEncoder = passwordEncoder;
-        this.refreshTokenRepository = refreshTokenRepository;
-    }
+//    public AuthService(UserRepository userRepository, JwtService jwtService, AuthenticationManager authenticationManager, PasswordEncoder passwordEncoder, RefreshTokenRepository refreshTokenRepository) {
+//        this.userRepository = userRepository;
+//        this.jwtService = jwtService;
+//        this.authenticationManager = authenticationManager;
+//        this.passwordEncoder = passwordEncoder;
+//        this.refreshTokenRepository = refreshTokenRepository;
+//    }
 
     @Transactional
     public AuthResponse register(RegisterRequest request) {
@@ -212,7 +214,7 @@ public class AuthService {
         RefreshToken refreshToken = new RefreshToken(
                 UUID.randomUUID().toString(),
                 user,
-                LocalDateTime.now().plusDays(refreshExpirationDays)
+                LocalDateTime.now().plusDays(this.refreshExpirationDays)
         );
         refreshTokenRepository.save(refreshToken);
 

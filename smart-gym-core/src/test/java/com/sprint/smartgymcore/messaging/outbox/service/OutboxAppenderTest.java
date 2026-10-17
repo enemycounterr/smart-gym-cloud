@@ -1,5 +1,4 @@
-package com.sprint.smartgymcore.messaging.publisher;
-
+package com.sprint.smartgymcore.messaging.outbox.service;
 
 import com.sprint.smartgymcore.config.rabbitmq.notification.NotificationRabbitProperties;
 import com.sprint.smartgymcore.messaging.event.outbound.AccessRegisterEvent;
@@ -9,31 +8,30 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.amqp.rabbit.core.RabbitTemplate;
 
 import java.time.Instant;
+import java.util.UUID;
 
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
-public class AccessOutboundEventPublisherTest {
+public class OutboxAppenderTest {
 
     @Mock
-    private RabbitTemplate rabbitTemplate;
+    private OutboxService outboxService;
 
     @Mock
-    private NotificationRabbitProperties notificationRabbitProperties;
+    private NotificationRabbitProperties notificationProps;
 
     @InjectMocks
-    private AccessOutboundEventPublisher publisher;
+    private OutboxAppender outboxAppender;
 
     @Test
-    @DisplayName("Should route AccessRegisterEvent to RabbitMQ with correct exchange and routing key")
-    public void handleAccessRegisteredEvent_shouldSendToRabbitMQ() {
+    @DisplayName("Should intercept AccessRegisterEvent and delegate to OutboxService")
+    public void handleAccessRegisteredEvent_shouldSaveToOutbox() {
         // Arrange
         NotificationRabbitProperties.RoutingKeys routingKeys = mock(NotificationRabbitProperties.RoutingKeys.class);
-        when(notificationRabbitProperties.exchange()).thenReturn("gym.events");
-        when(notificationRabbitProperties.routingKeys()).thenReturn(routingKeys);
+        when(notificationProps.routingKeys()).thenReturn(routingKeys);
         when(routingKeys.accessRegistered()).thenReturn("gym.access.registered");
 
         AccessRegisterEvent event = new AccessRegisterEvent(
@@ -41,11 +39,17 @@ public class AccessOutboundEventPublisherTest {
         );
 
         // Act
-        publisher.handleAccessRegisteredEvent(event);
+        outboxAppender.handleAccessRegisterEvent(event);
 
         // Assert
-        verify(rabbitTemplate).convertAndSend("gym.events", "gym.access.registered", event);
-        verifyNoMoreInteractions(rabbitTemplate);
+        verify(outboxService).saveEvent(
+                any(UUID.class),
+                eq("ACCESS_LOG"),
+                eq("100"),
+                eq("ACCESS_REGISTERED"),
+                eq("gym.access.registered"),
+                eq(event)
+        );
+        verifyNoMoreInteractions(outboxService);
     }
-
 }

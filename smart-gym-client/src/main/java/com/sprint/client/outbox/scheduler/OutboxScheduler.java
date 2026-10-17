@@ -75,14 +75,12 @@ public class OutboxScheduler {
                 event.getEventType(), event.getId(), rabbitMqProperties.exchange(), event.getRoutingKey());
     }
 
-    @Transactional
     public void markAsSent(OutboxEvent event) {
         event.setStatus(OutboxStatus.SENT);
         event.setSentAt(Instant.now());
         outboxRepository.save(event);
     }
 
-    @Transactional
     public void handleFailure(OutboxEvent event, Exception e) {
         event.setRetryCount(event.getRetryCount() + 1);
         event.setErrorMessage(e.getMessage());
