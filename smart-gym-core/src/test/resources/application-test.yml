@@ -42,3 +42,19 @@ jwt:
   expiration: 900000
   refresh-expiration-days: 7
 
+app:
+  rabbitmq:
+    client:
+      exchange: "test.client.direct"
+      queues:
+        client-created: "test.access.client.created.queue"
+        client-status: "test.access.client.status.queue"
+        client-updated: "test.access.client.updated.queue"
+      routing-keys:
+        created: "test.client.event.created"
+        status-changed: "test.client.event.status.changed"
+        updated: "test.client.event.updated"
+    notification:
+      exchange: "test.gym.events"
+      routing-keys:
+        access-registered: "test.gym.access.registered"

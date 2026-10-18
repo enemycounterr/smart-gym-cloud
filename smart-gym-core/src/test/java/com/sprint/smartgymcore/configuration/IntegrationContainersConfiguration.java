@@ -7,6 +7,7 @@ import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.containers.RabbitMQContainer;
 import org.testcontainers.containers.wait.strategy.Wait;
+import org.testcontainers.utility.DockerImageName;
 
 import java.time.Duration;
 
@@ -22,11 +23,17 @@ public class IntegrationContainersConfiguration {
     @Bean
     @ServiceConnection(name = "redis")
     GenericContainer<?> redis() {
-        return new GenericContainer<>("redis:7-alpine")
+        return new GenericContainer<>(DockerImageName.parse("redis:7-alpine"))
                 .withExposedPorts(6379)
                 .waitingFor(Wait.forListeningPort())
                 .withStartupTimeout(Duration.ofSeconds(60));
     }
+
+//    @Bean
+//    @ServiceConnection(name = "redis")
+//    RedisContainer redis() {
+//        return new RedisContainer(DockerImageName.parse("redis:7-alpine"));
+//    }
 
     @Bean
     @ServiceConnection
