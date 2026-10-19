@@ -59,23 +59,7 @@ public class AccessService {
 
     @Transactional(readOnly = true)
     public Page<AccessLogResponse> getAllLogs(Pageable pageable) {
-        Page<AccessLog> logsPage = this.accessLogRepository.findAll(pageable);
-
-        if (logsPage.isEmpty()) {
-            return Page.empty(pageable);
-        }
-
-        Set<Long> clientIds = logsPage.stream()
-                .map(AccessLog::getClientId)
-                .collect(Collectors.toSet());
-
-        Map<Long, ClientResponse> clientMap = getClientsBatch(clientIds);
-
-        return logsPage.map(log -> {
-            ClientResponse client = clientMap.get(log.getClientId());
-            String clientName = (client != null) ? client.name() : "Unknown Client";
-            return accessMapper.toDto(log, clientName);
-        });
+        return this.accessLogRepository.findAllAccessLogsWithClientName(pageable);
     }
 
     @Transactional
@@ -143,7 +127,7 @@ public class AccessService {
                 savedLog.getTimeStamp()
         );
 
-        log.info("Access validated. Publishing internal event to be handled AFTER COMMIT");
+        log.info("Access validated. Publishing internal event to outbox");
         this.eventPublisher.publishEvent(event);
 
         return accessMapper.toDto(savedLog, currentClientName);
@@ -175,18 +159,17 @@ public class AccessService {
                 .map(AccessLog::getClientId)
                 .collect(Collectors.toSet());
 
-        Map<Long, ClientResponse> clientsMap = getClientsBatch(clientIds);
+        Map<Long, String> clientsNameMap = this.accessCardRepository.findAllByClientIdIn(clientIds)
+                .stream()
+                .collect(Collectors.toMap(AccessCard::getClientId, AccessCard::getClientName));
 
         return insideLogs.stream()
-                .map(log -> {
-                            ClientResponse client = clientsMap.get(log.getClientId());
-                            String name = (client != null) ? client.name() : "Unknown Client";
-                            return new ClientInsideResponse(
-                                    log.getClientId(),
-                                    name,
-                                    log.getTimeStamp()
-                            );
-                        }
+                .map(log -> new ClientInsideResponse(
+                                log.getClientId(),
+                                clientsNameMap.getOrDefault(log.getClientId(), "Unknown Client"),
+                                log.getTimeStamp()
+                        )
+
                 )
                 .sorted(Comparator.comparing(ClientInsideResponse::insideSince))
                 .toList();

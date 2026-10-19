@@ -32,7 +32,8 @@ public class ClientNameSyncRunner implements ApplicationRunner {
             return;
         }
 
-        log.info("Found {} cards without names. Starting background synchronization with Client Service", unSyncedCards.size());
+        log.info("Found {} cards without names. Starting background synchronization with Client Service",
+                unSyncedCards.size());
 
         try {
             Set<Long> clientIds = unSyncedCards.stream()

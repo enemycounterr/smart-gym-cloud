@@ -138,10 +138,10 @@ app:
         status-changed: "client.event.status.changed"
         updated: "client.event.updated"
 
-  notification:
-    exchange: "gym.events"
-    routing-keys:
-      access-registered: "gym.access.registered"
+    notification:
+      exchange: "gym.events"
+      routing-keys:
+        access-registered: "gym.access.registered"
 
   outbox:
     scheduler:
