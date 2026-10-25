@@ -1,10 +1,10 @@
-package com.sprint.client.config;
+package com.sprint.client.config.rabbitmq;
 
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 @ConfigurationProperties(prefix = "app.rabbitmq")
-public record RabbitMqProperties(
+public record ClientRabbitProperties(
         String exchange,
         RoutingKeys routingKeys
 ) {

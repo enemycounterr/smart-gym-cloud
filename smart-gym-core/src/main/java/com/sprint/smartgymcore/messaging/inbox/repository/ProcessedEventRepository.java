@@ -1,6 +1,6 @@
-package com.sprint.smartgymcore.repository;
+package com.sprint.smartgymcore.messaging.inbox.repository;
 
-import com.sprint.smartgymcore.model.ProcessedEvent;
+import com.sprint.smartgymcore.messaging.inbox.model.ProcessedEvent;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 

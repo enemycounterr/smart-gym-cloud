@@ -1,6 +1,6 @@
 package com.sprint.client.outbox.scheduler;
 
-import com.sprint.client.config.RabbitMqProperties;
+import com.sprint.client.config.rabbitmq.ClientRabbitProperties;
 import com.sprint.client.outbox.model.OutboxEvent;
 import com.sprint.client.outbox.model.OutboxStatus;
 import com.sprint.client.outbox.repository.OutboxRepository;
@@ -11,7 +11,6 @@ import org.springframework.amqp.core.MessageProperties;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
@@ -25,7 +24,7 @@ public class OutboxScheduler {
     private static final int MAX_RETRY_COUNT = 5;
     private final OutboxRepository outboxRepository;
     private final RabbitTemplate rabbitTemplate;
-    private final RabbitMqProperties rabbitMqProperties;
+    private final ClientRabbitProperties clientRabbitProperties;
 
     /*
      * Scheduler independently polls pending outbox events and publishes them to RabbitMQ.
@@ -65,14 +64,14 @@ public class OutboxScheduler {
         Message message = new Message(event.getPayload().getBytes(StandardCharsets.UTF_8), properties);
 
         rabbitTemplate.send(
-                rabbitMqProperties.exchange(),
+                clientRabbitProperties.exchange(),
                 event.getRoutingKey(),
                 message
         );
 
         markAsSent(event);
         log.info("Successfully relayed outbox event [{}] id={} to exchange=[{}] routingKey=[{}]",
-                event.getEventType(), event.getId(), rabbitMqProperties.exchange(), event.getRoutingKey());
+                event.getEventType(), event.getId(), clientRabbitProperties.exchange(), event.getRoutingKey());
     }
 
     public void markAsSent(OutboxEvent event) {

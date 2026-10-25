@@ -1,4 +1,4 @@
-package com.sprint.client.config;
+package com.sprint.client.config.rabbitmq;
 
 import org.springframework.amqp.core.DirectExchange;
 import org.springframework.amqp.support.converter.JacksonJsonMessageConverter;
@@ -9,11 +9,11 @@ import org.springframework.context.annotation.Configuration;
 import tools.jackson.databind.json.JsonMapper;
 
 @Configuration
-@EnableConfigurationProperties(RabbitMqProperties.class)
-public class RabbitMqConfig {
+@EnableConfigurationProperties(ClientRabbitProperties.class)
+public class ClientRabbitConfig {
 
     @Bean
-    public DirectExchange clientExchange(RabbitMqProperties properties) {
+    public DirectExchange clientExchange(ClientRabbitProperties properties) {
         return new DirectExchange(properties.exchange());
     }
 

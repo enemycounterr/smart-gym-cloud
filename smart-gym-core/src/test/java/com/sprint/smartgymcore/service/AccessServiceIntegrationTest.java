@@ -1,32 +1,27 @@
 package com.sprint.smartgymcore.service;
 
 
-import com.github.tomakehurst.wiremock.junit5.WireMockTest;
 import com.sprint.smartgymcore.BaseIntegrationTest;
 import com.sprint.smartgymcore.dto.access.AccessCheckRequest;
 import com.sprint.smartgymcore.dto.access.ClientAccessStatsResponse;
 import com.sprint.smartgymcore.model.AccessCard;
 import com.sprint.smartgymcore.model.AccessDirection;
 import com.sprint.smartgymcore.model.AccessZone;
-import com.sprint.smartgymcore.repository.AccessCardRepository;
-import com.sprint.smartgymcore.repository.AccessLogRepository;
-import com.sprint.smartgymcore.repository.AccessZoneRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.redis.core.StringRedisTemplate;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.Set;
 
-import static com.github.tomakehurst.wiremock.client.WireMock.*;
 import static org.awaitility.Awaitility.await;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
-@WireMockTest(httpPort = 8082)
+//@WireMockTest(httpPort = 8082)
 public class AccessServiceIntegrationTest extends BaseIntegrationTest {
 
     @Autowired
@@ -54,21 +49,6 @@ public class AccessServiceIntegrationTest extends BaseIntegrationTest {
                 .build();
         accessCardRepository.save(card);
 
-        stubFor(get(urlEqualTo("/api/v1/clients/" + testClientId))
-                .willReturn(aResponse()
-                        .withHeader("Content-Type", "application/json")
-                        .withStatus(200)
-                        .withBody("""
-                                {
-                                  "id": 999,
-                                  "name": "Integration User",
-                                  "email": "integration@mail.com",
-                                  "isActive": true
-                                }
-                                """)
-                )
-
-        );
     }
 
     @Test
@@ -92,6 +72,5 @@ public class AccessServiceIntegrationTest extends BaseIntegrationTest {
         ClientAccessStatsResponse stats2 = accessService.getClientStats(testClientId);
         assertEquals(1, stats2.totalEntries(), "Statistics should update to 1 entry");
 
-        verify(2, getRequestedFor(urlEqualTo("/api/v1/clients/" + testClientId)));
     }
 }

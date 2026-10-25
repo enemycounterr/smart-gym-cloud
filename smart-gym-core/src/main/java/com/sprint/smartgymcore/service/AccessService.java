@@ -7,7 +7,6 @@ import com.sprint.smartgymcore.dto.access.ClientAccessStatsResponse;
 import com.sprint.smartgymcore.dto.access.ClientInsideResponse;
 import com.sprint.smartgymcore.exceptions.AccessAlreadyGrantedException;
 import com.sprint.smartgymcore.exceptions.ResourceNotFoundException;
-import com.sprint.smartgymcore.exceptions.ZoneAccessDeniedException;
 import com.sprint.smartgymcore.external.client.ClientExternalService;
 import com.sprint.smartgymcore.external.client.ClientResponse;
 import com.sprint.smartgymcore.mapper.AccessMapper;
@@ -15,12 +14,13 @@ import com.sprint.smartgymcore.messaging.event.inbound.client.ClientCreatedEvent
 import com.sprint.smartgymcore.messaging.event.inbound.client.ClientStatusChangedEvent;
 import com.sprint.smartgymcore.messaging.event.inbound.client.ClientUpdatedEvent;
 import com.sprint.smartgymcore.messaging.event.outbound.AccessRegisterEvent;
+import com.sprint.smartgymcore.messaging.inbox.model.ProcessedEvent;
 import com.sprint.smartgymcore.metrics.service.MetricsService;
 import com.sprint.smartgymcore.model.*;
 import com.sprint.smartgymcore.repository.AccessCardRepository;
 import com.sprint.smartgymcore.repository.AccessLogRepository;
 import com.sprint.smartgymcore.repository.AccessZoneRepository;
-import com.sprint.smartgymcore.repository.ProcessedEventRepository;
+import com.sprint.smartgymcore.messaging.inbox.repository.ProcessedEventRepository;
 import com.sprint.smartgymcore.validator.AccessRuleValidator;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -38,6 +38,7 @@ import java.time.LocalDateTime;
 import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Slf4j
 @Service
@@ -138,13 +139,17 @@ public class AccessService {
     public ClientAccessStatsResponse getClientStats(Long clientId) {
         log.info("-----------------METHOD INVOKE getClientStats ------------------------");
 
-        ClientResponse client = fetchClientSafely(clientId);
+//        ClientResponse client = fetchClientSafely(clientId);
+        AccessCard card = this.accessCardRepository.findByClientId(clientId)
+                .orElseThrow(() -> new ResourceNotFoundException("Client not found with ID: " + clientId));
+
+        String clientName = card.getClientName() != null ? card.getClientName() : "Unknown Client";
 
         long inCount = this.accessLogRepository.countByClientIdAndDirection(clientId, AccessDirection.IN);
 
         long outCount = this.accessLogRepository.countByClientIdAndDirection(clientId, AccessDirection.OUT);
 
-        return new ClientAccessStatsResponse(clientId, client.name(), inCount, outCount);
+        return new ClientAccessStatsResponse(clientId, clientName, inCount, outCount);
     }
 
     @Transactional(readOnly = true)

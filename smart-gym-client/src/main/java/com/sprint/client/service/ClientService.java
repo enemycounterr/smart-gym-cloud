@@ -1,7 +1,7 @@
 package com.sprint.client.service;
 
 
-import com.sprint.client.config.RabbitMqProperties;
+import com.sprint.client.config.rabbitmq.ClientRabbitProperties;
 import com.sprint.client.dto.ClientCreateRequest;
 import com.sprint.client.dto.ClientResponse;
 import com.sprint.client.dto.ClientUpdateRequest;
@@ -34,7 +34,7 @@ public class ClientService {
     private final ClientRepository clientRepository;
     private final ClientMapper clientMapper;
     private final OutboxService outboxService;
-    private final RabbitMqProperties rabbitMqProperties;
+    private final ClientRabbitProperties clientRabbitProperties;
 
     @Transactional
     public ClientResponse createClient(ClientCreateRequest request) {
@@ -61,7 +61,7 @@ public class ClientService {
                 "CLIENT",
                 savedClient.getId().toString(),
                 "ClientCreated",
-                this.rabbitMqProperties.routingKeys().created(),
+                this.clientRabbitProperties.routingKeys().created(),
                 event
         );
 
@@ -140,7 +140,7 @@ public class ClientService {
                     "CLIENT",
                     updatedClient.getId().toString(),
                     "ClientUpdatedEvent",
-                    this.rabbitMqProperties.routingKeys().updated(),
+                    this.clientRabbitProperties.routingKeys().updated(),
                     event
             );
         }
@@ -176,7 +176,7 @@ public class ClientService {
                 "CLIENT",
                 updatedClient.getId().toString(),
                 "ClientStatusChangedEvent",
-                this.rabbitMqProperties.routingKeys().statusChanged(),
+                this.clientRabbitProperties.routingKeys().statusChanged(),
                 event
         );
 

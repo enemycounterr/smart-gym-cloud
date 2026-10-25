@@ -74,6 +74,7 @@ services:
       - NOTIFICATION_SERVICE_URL=http://smart-gym-notification:8081
       - ZIPKIN_URL=http://zipkin:9411/api/v2/spans
 
+#  TODO: Remove port mappings to expose services only within Docker network
   smart-gym-core:
     build: ./smart-gym-core
     container_name: smart-gym-core

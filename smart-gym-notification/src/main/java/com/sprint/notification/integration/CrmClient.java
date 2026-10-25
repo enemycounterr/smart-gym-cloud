@@ -2,6 +2,7 @@ package com.sprint.notification.integration;
 
 
 import com.sprint.notification.exception.CrmIntegrationException;
+import io.github.resilience4j.circuitbreaker.CallNotPermittedException;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import io.github.resilience4j.retry.annotation.Retry;
 import io.micrometer.observation.ObservationRegistry;
@@ -11,7 +12,6 @@ import org.springframework.http.MediaType;
 import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
-import org.springframework.web.client.RestClientException;
 
 @Slf4j
 @Service
@@ -50,8 +50,12 @@ public class CrmClient {
     }
 
     public void sendLoyaltyPointsFallback(Long clientId, String clientName, Throwable t) {
-        log.error("Circuit Breaker [crmService] triggered for clientId: {} ({}). Reason: {}",
-                clientId, clientName, t.getMessage());
+
+        if (t instanceof CallNotPermittedException) {
+            log.warn("Circuit Breaker [crmService] is OPEN. Fast-failing for clientId: {}", clientId);
+        } else {
+            log.error("CRM call failed after retries for clientId: {}. Reason: {}", clientId, t.getMessage());
+        }
 
         throw new CrmIntegrationException("CRM integration failed (Circuit Breaker): " + t.getMessage(), t);
     }

@@ -16,7 +16,7 @@ import com.sprint.smartgymcore.model.AccessZone;
 import com.sprint.smartgymcore.repository.AccessCardRepository;
 import com.sprint.smartgymcore.repository.AccessLogRepository;
 import com.sprint.smartgymcore.repository.AccessZoneRepository;
-import com.sprint.smartgymcore.repository.ProcessedEventRepository;
+import com.sprint.smartgymcore.messaging.inbox.repository.ProcessedEventRepository;
 import com.sprint.smartgymcore.validator.AccessRuleValidator;
 import com.sprint.smartgymcore.validator.impl.ActiveCardValidator;
 import com.sprint.smartgymcore.validator.impl.AntiPassbackValidator;

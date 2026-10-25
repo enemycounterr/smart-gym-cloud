@@ -1,4 +1,4 @@
-package com.sprint.smartgymcore.model;
+package com.sprint.smartgymcore.messaging.inbox.model;
 
 import jakarta.persistence.*;
 import lombok.*;
