@@ -14,9 +14,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
-import java.util.Set;
-
 @RestController
 @RequestMapping("/api/v1/clients")
 @RequiredArgsConstructor
@@ -34,13 +31,9 @@ public class ClientController {
     }
 
     @GetMapping("/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN','GUARD')")
     public ClientResponse getClientById(@PathVariable Long id) {
         return this.clientService.getClientById(id);
-    }
-
-    @PostMapping("/batch")
-    public ResponseEntity<List<ClientResponse>> getClientsByIds(@RequestBody Set<Long> ids){
-        return ResponseEntity.ok(this.clientService.getClientsByIds(ids));
     }
 
     @PostMapping

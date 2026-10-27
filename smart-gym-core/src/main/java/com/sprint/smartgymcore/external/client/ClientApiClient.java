@@ -9,7 +9,7 @@ import org.springframework.web.service.annotation.PostExchange;
 import java.util.List;
 import java.util.Set;
 
-@HttpExchange("/api/v1/clients")
+@HttpExchange("/internal/v1/clients")
 public interface ClientApiClient {
 
     @GetExchange("/{id}")

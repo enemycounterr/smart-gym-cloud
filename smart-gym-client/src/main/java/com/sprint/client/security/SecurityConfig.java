@@ -35,10 +35,7 @@ public class SecurityConfig {
                                 "/swagger-ui.html",
                                 "/actuator/**"
                         ).permitAll()
-
-                        .requestMatchers(HttpMethod.POST, "/api/v1/clients/batch").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/v1/clients/*").permitAll()
-
+                        .requestMatchers("/internal/**").permitAll()
                         .anyRequest().authenticated()
                 )
                 .exceptionHandling(ex -> ex

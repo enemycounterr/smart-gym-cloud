@@ -19,3 +19,5 @@ target/
 # Логи и временные файлы
 *.log
 logs/
+
+docker-compose.override.yml

@@ -6,6 +6,7 @@ import com.sprint.smartgymcore.dto.zone.AccessZoneResponse;
 import com.sprint.smartgymcore.dto.zone.AccessZoneUpdateRequest;
 import com.sprint.smartgymcore.exceptions.ResourceNotFoundException;
 import com.sprint.smartgymcore.external.client.ClientApiClient;
+import com.sprint.smartgymcore.external.client.ClientExternalService;
 import com.sprint.smartgymcore.external.client.ClientResponse;
 import com.sprint.smartgymcore.mapper.AccessZoneMapper;
 import com.sprint.smartgymcore.model.AccessZone;
@@ -30,7 +31,7 @@ public class AccessZoneService {
     private final AccessLogRepository accessLogRepository;
     private final AccessZoneMapper zoneMapper;
 
-    private final ClientApiClient clientApiClient;
+    private final ClientExternalService clientExternalService;
 
     @CacheEvict(value = "zones", allEntries = true)
     @Transactional
@@ -92,6 +93,6 @@ public class AccessZoneService {
             return List.of();
         }
 
-        return this.clientApiClient.getClientsByIds(clientIds);
+        return this.clientExternalService.getClientsByIds(clientIds);
     }
 }
