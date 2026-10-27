@@ -20,8 +20,8 @@ services:
   redis-cache:
     image: redis:7-alpine
     container_name: smart-access-redis
-    ports:
-      - "6379:6379"
+#    ports:
+#      - "6379:6379"
     healthcheck:
       test: [ "CMD", "redis-cli", "ping" ]
       interval: 5s
@@ -33,7 +33,7 @@ services:
     container_name: smart_gym_rabbitmq
     hostname: rabbitmq
     ports:
-      - "5672:5672"
+#      - "5672:5672"
       - "15672:15672"
     environment:
       RABBITMQ_DEFAULT_USER: ${RABBITMQ_USERNAME}

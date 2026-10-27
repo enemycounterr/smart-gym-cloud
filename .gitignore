@@ -21,3 +21,5 @@ target/
 logs/
 
 docker-compose.override.yml
+
+**/*.md

@@ -36,6 +36,15 @@ spring:
             response-timeout: 5s
 
           routes:
+            # BLOCK ALL INTERNAL ENDPOINTS
+            - id: block-internal-top
+              uri: nohub://null
+              predicates:
+                - Path=/internal/**, /*/internal/**
+              filters:
+                - SetStatus=403
+
+
             # BUSINESS ROUTES
             - id: auth-service
               uri: ${AUTH_SERVICE_URL:http://localhost:8083}

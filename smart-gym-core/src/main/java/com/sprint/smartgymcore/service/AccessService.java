@@ -240,11 +240,13 @@ public class AccessService {
 
         accessCardRepository.findByClientId(event.clientId())
                 .ifPresentOrElse(card -> {
-                    card.setActive(event.isActive());
-                    accessCardRepository.save(card);
-                    markAsProcessed(event.eventId(), "ClientStatusChanged");
-                    log.info("Updated Access Card status to {} for clientId: {}", event.isActive(), event.clientId());
-                }, () -> log.warn("Cannot update status: Access card not found for clientId: {}", event.clientId()));
+                            card.setActive(event.isActive());
+                            accessCardRepository.save(card);
+                            markAsProcessed(event.eventId(), "ClientStatusChanged");
+                            log.info("Updated Access Card status to {} for clientId: {}", event.isActive(), event.clientId());
+                        },
+                        () -> log.warn("Cannot update status: Access card not found for clientId: {}", event.clientId())
+                );
     }
 
     @Transactional
