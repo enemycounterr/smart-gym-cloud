@@ -78,8 +78,8 @@ services:
   smart-gym-core:
     build: ./smart-gym-core
     container_name: smart-gym-core
-    ports:
-      - "8080:8080"
+#    ports:
+#      - "8080:8080"
     depends_on:
       postgres-db:
         condition: service_healthy
@@ -104,8 +104,8 @@ services:
   smart-gym-auth:
     build: ./smart-gym-auth
     container_name: smart-gym-auth
-    ports:
-      - "8083:8083"
+#    ports:
+#      - "8083:8083"
     depends_on:
       postgres-db:
         condition: service_healthy
@@ -123,8 +123,8 @@ services:
   smart-gym-client:
     build: ./smart-gym-client
     container_name: smart-gym-client
-    ports:
-      - "8082:8082"
+#    ports:
+#      - "8082:8082"
     depends_on:
       postgres-db:
         condition: service_healthy
@@ -144,8 +144,8 @@ services:
   smart-gym-notification:
     build: ./smart-gym-notification
     container_name: smart-gym-notification
-    ports:
-      - "8081:8081"
+#    ports:
+#      - "8081:8081"
     depends_on:
       rabbitmq:
         condition: service_healthy

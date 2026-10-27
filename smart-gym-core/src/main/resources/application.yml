@@ -107,6 +107,7 @@ resilience4j:
         ignore-exceptions:
           - com.sprint.smartgymcore.exceptions.ResourceNotFoundException
           - org.springframework.web.client.HttpClientErrorException
+
   retry:
     instances:
       clientService:
@@ -116,6 +117,7 @@ resilience4j:
         exponential-backoff-multiplier: 2
         retry-exceptions:
           - org.springframework.web.client.ResourceAccessException
+          - org.springframework.web.client.HttpServerErrorException
 logging:
   include-application-name: false
   pattern:

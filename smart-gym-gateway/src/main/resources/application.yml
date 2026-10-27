@@ -30,6 +30,11 @@ spring:
                   - OPTIONS
                 allowedHeaders: "*"
                 allowCredentials: true
+
+          httpclient:
+            connect-timeout: 3000
+            response-timeout: 5s
+
           routes:
             # BUSINESS ROUTES
             - id: auth-service
