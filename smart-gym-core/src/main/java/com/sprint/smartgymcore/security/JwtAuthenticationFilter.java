@@ -1,6 +1,8 @@
 package com.sprint.smartgymcore.security;
 
 
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.JwtException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -42,12 +44,15 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         jwt = authHeader.substring(7);
 
         try {
-            if (this.jwtService.isTokenValid(jwt) && SecurityContextHolder.getContext().getAuthentication() == null) {
-                username = this.jwtService.extractUsername(jwt);
+            if (SecurityContextHolder.getContext().getAuthentication() == null) {
+                Claims claims = this.jwtService.extractAllClaims(jwt);
 
-                List<String> roles = this.jwtService.extractRoles(jwt);
+                username = claims.getSubject();
 
-                List<SimpleGrantedAuthority> authorities = roles.stream()
+                List<String> roles = claims.get("roles", List.class);
+
+                List<SimpleGrantedAuthority> authorities = (roles != null ? roles : List.<String>of()).stream()
+                        .map(role -> role.startsWith("ROLE_") ? role : "ROLE_" + role)
                         .map(SimpleGrantedAuthority::new)
                         .toList();
 
@@ -60,7 +65,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                 SecurityContextHolder.getContext().setAuthentication(authToken);
             }
-        } catch (Exception e) {
+        } catch (JwtException | IllegalArgumentException e) {
             response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
             response.setContentType("application/json");
             response.getWriter().write("{\"error\": \"Token is expired or invalid\"}");

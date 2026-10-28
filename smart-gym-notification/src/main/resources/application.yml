@@ -91,6 +91,9 @@ resilience4j:
           - org.springframework.web.client.ResourceAccessException
           - org.springframework.web.client.HttpServerErrorException
 
+jwt:
+  secret: ${JWT_SECRET}
+
 logging:
   include-application-name: false
   pattern:

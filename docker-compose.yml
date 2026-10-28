@@ -74,7 +74,6 @@ services:
       - NOTIFICATION_SERVICE_URL=http://smart-gym-notification:8081
       - ZIPKIN_URL=http://zipkin:9411/api/v2/spans
 
-#  TODO: Remove port mappings to expose services only within Docker network
   smart-gym-core:
     build: ./smart-gym-core
     container_name: smart-gym-core
@@ -154,6 +153,7 @@ services:
       - SPRING_RABBITMQ_PORT=5672
       - SPRING_RABBITMQ_USERNAME=${RABBITMQ_USERNAME}
       - SPRING_RABBITMQ_PASSWORD=${RABBITMQ_PASSWORD}
+      - JWT_SECRET=${JWT_SECRET}
       - INTEGRATION_CRM_BASE_URL=${INTEGRATION_CRM_BASE_URL}
       - ZIPKIN_URL=http://zipkin:9411/api/v2/spans
 

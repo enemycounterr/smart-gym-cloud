@@ -38,6 +38,7 @@ spring:
     password: ${SPRING_RABBITMQ_PASSWORD}
     template:
       observation-enabled: true
+      delivery-mode: persistent
     listener:
       simple:
         observation-enabled: true

@@ -20,6 +20,7 @@ spring:
     password: ${SPRING_RABBITMQ_PASSWORD:admin}
     template:
       observation-enabled: true
+      delivery-mode: persistent
     listener:
       simple:
         observation-enabled: true
