@@ -32,8 +32,8 @@ spring:
                 allowCredentials: true
 
           httpclient:
-            connect-timeout: 3000
-            response-timeout: 5s
+            connect-timeout: 2000
+            response-timeout: 4s
 
           routes:
             # BLOCK ALL INTERNAL ENDPOINTS
@@ -50,21 +50,72 @@ spring:
               uri: ${AUTH_SERVICE_URL:http://localhost:8083}
               predicates:
                 - Path=/api/v1/auth/**, /api/v1/admin/users/**
+              filters:
+                - name: CircuitBreaker
+                  args:
+                    name: authCB
+                    fallbackUri: forward:/fallback/auth
+                - name: Retry
+                  args:
+                    retries: 2
+                    statuses: BAD_GATEWAY, SERVICE_UNAVAILABLE, GATEWAY_TIMEOUT
+                    methods: GET
+                    backoff:
+                      firstBackoff: 50ms
+                      maxBackoff: 300ms
+                      factor: 2
+                      basedOnPreviousValue: true
+
 
             - id: core-service
               uri: ${CORE_SERVICE_URL:http://localhost:8080}
               predicates:
                 - Path=/api/v1/zones/**, /api/v1/access/**
+              filters:
+                - name: CircuitBreaker
+                  args:
+                    name: coreCB
+                    fallbackUri: forward:/fallback/core
+                - name: Retry
+                  args:
+                    retries: 2
+                    statuses: BAD_GATEWAY, SERVICE_UNAVAILABLE, GATEWAY_TIMEOUT
+                    methods: GET
+                    backoff:
+                      firstBackoff: 50ms
+                      maxBackoff: 300ms
+                      factor: 2
+                      basedOnPreviousValue: true
 
             - id: client-service
               uri: ${CLIENT_SERVICE_URL:http://localhost:8082}
               predicates:
                 - Path=/api/v1/clients/**
+              filters:
+                - name: CircuitBreaker
+                  args:
+                    name: clientCB
+                    fallbackUri: forward:/fallback/client
+                - name: Retry
+                  args:
+                    retries: 2
+                    statuses: BAD_GATEWAY, SERVICE_UNAVAILABLE, GATEWAY_TIMEOUT
+                    methods: GET
+                    backoff:
+                      firstBackoff: 50ms
+                      maxBackoff: 300ms
+                      factor: 2
+                      basedOnPreviousValue: true
 
             - id: notification-service-admin
               uri: ${NOTIFICATION_SERVICE_URL:http://localhost:8081}
               predicates:
                 - Path=/api/v1/admin/rabbitmq/**
+              filters:
+                - name: CircuitBreaker
+                  args:
+                    name: notificationCB
+                    fallbackUri: forward:/fallback/notification
 
             # OPENAPI / SWAGGER AGGREGATION ROUTES
             - id: auth-docs
@@ -92,6 +143,29 @@ spring:
               filters:
                 - SetPath=/v3/api-docs
 
+resilience4j:
+  circuitbreaker:
+    configs:
+      default:
+        slidingWindowType: COUNT_BASED
+        slidingWindowSize: 10
+        minimumNumberOfCalls: 5
+        failureRateThreshold: 50
+        slowCallRateThreshold: 50
+        slowCallDurationThreshold: 2s
+        waitDurationInOpenState: 10s
+        permittedNumberOfCallsInHalfOpenState: 3
+        automaticTransitionFromOpenToHalfOpenEnabled: true
+    instances:
+      authCB:
+        baseConfig: default
+      coreCB:
+        baseConfig: default
+      clientCB:
+        baseConfig: default
+      notificationCB:
+        baseConfig: default
+
 springdoc:
   swagger-ui:
     path: /swagger-ui.html
@@ -106,6 +180,13 @@ springdoc:
         url: /v3/api-docs/notification
 
 management:
+  endpoints:
+    web:
+      exposure:
+        include: health, metrics, prometheus, circuitbreakers, circuitbreakerevents
+  endpoint:
+    health:
+      show-details: always
   tracing:
     enabled: true
     sampling:
