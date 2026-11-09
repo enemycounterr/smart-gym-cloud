@@ -12,12 +12,15 @@ import tools.jackson.core.JacksonException;
 import tools.jackson.databind.json.JsonMapper;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.UUID;
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class OutboxService {
+
+    private static final int MAX_RETRY_COUNT = 5;
 
     private final OutboxRepository outboxRepository;
     private final JsonMapper jsonMapper;
@@ -55,8 +58,33 @@ public class OutboxService {
 
     }
 
+    @Transactional(readOnly = true)
+    public List<OutboxEvent> findPendingEvents() {
+        return outboxRepository.findTop50ByStatusOrderByCreatedAtAsc(OutboxStatus.PENDING);
+    }
+
     @Transactional
     public int deleteSentEventsBatch(Instant cutoff, int batchSize) {
         return outboxRepository.deleteSentEventsOlderThanBatch(cutoff, batchSize);
+    }
+
+    @Transactional
+    public void markAsSent(OutboxEvent event) {
+        event.setStatus(OutboxStatus.SENT);
+        event.setSentAt(Instant.now());
+        outboxRepository.save(event);
+    }
+
+    @Transactional
+    public void handleFailure(OutboxEvent event, Exception e) {
+        event.setRetryCount(event.getRetryCount() + 1);
+        event.setErrorMessage(e.getMessage());
+
+        if (event.getRetryCount() >= MAX_RETRY_COUNT) {
+            event.setStatus(OutboxStatus.FAILED);
+            log.error("Outbox event id={} marked as FAILED after {} attempts", event.getId(), MAX_RETRY_COUNT);
+        }
+
+        outboxRepository.save(event);
     }
 }
