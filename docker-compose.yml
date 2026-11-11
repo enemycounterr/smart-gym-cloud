@@ -63,16 +63,24 @@ services:
     ports:
       - "8000:8000"
     depends_on:
-      - smart-gym-core
-      - smart-gym-auth
-      - smart-gym-client
-      - smart-gym-notification
+      redis-cache:
+        condition: service_healthy
+      smart-gym-core:
+        condition: service_started
+      smart-gym-auth:
+        condition: service_started
+      smart-gym-client:
+        condition: service_started
+      smart-gym-notification:
+        condition: service_started
     environment:
       - AUTH_SERVICE_URL=http://smart-gym-auth:8083
       - CORE_SERVICE_URL=http://smart-gym-core:8080
       - CLIENT_SERVICE_URL=http://smart-gym-client:8082
       - NOTIFICATION_SERVICE_URL=http://smart-gym-notification:8081
       - ZIPKIN_URL=http://zipkin:9411/api/v2/spans
+      - SPRING_DATA_REDIS_HOST=${REDIS_HOST}
+      - SPRING_DATA_REDIS_PORT=${REDIS_PORT}
 
   smart-gym-core:
     build: ./smart-gym-core
@@ -90,8 +98,8 @@ services:
       - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres-db:5432/smart_access_core
       - SPRING_DATASOURCE_USERNAME=${DB_USERNAME}
       - SPRING_DATASOURCE_PASSWORD=${DB_PASSWORD}
-      - SPRING_DATA_REDIS_HOST=redis-cache
-      - SPRING_DATA_REDIS_PORT=6379
+      - SPRING_DATA_REDIS_HOST=${REDIS_HOST}
+      - SPRING_DATA_REDIS_PORT=${REDIS_PORT}
       - SPRING_RABBITMQ_HOST=rabbitmq
       - SPRING_RABBITMQ_PORT=5672
       - SPRING_RABBITMQ_USERNAME=${RABBITMQ_USERNAME}

@@ -5,6 +5,11 @@ spring:
   application:
     name: smart-gym-gateway
 
+  data:
+    redis:
+      host: ${SPRING_DATA_REDIS_HOST:localhost}
+      port: ${SPRING_DATA_REDIS_PORT:6379}
+
   output:
     ansi:
       enabled: ALWAYS
@@ -55,6 +60,7 @@ spring:
                   args:
                     name: authCB
                     fallbackUri: forward:/fallback/auth
+
                 - name: Retry
                   args:
                     retries: 2
@@ -65,6 +71,13 @@ spring:
                       maxBackoff: 300ms
                       factor: 2
                       basedOnPreviousValue: true
+
+                - name: RequestRateLimiter
+                  args:
+                    redis-rate-limiter.replenishRate: 1
+                    redis-rate-limiter.burstCapacity: 5
+                    redis-rate-limiter.requestedTokens: 1
+                    key-resolver: "#{@ipKeyResolver}"
 
 
             - id: core-service
@@ -76,6 +89,34 @@ spring:
                   args:
                     name: coreCB
                     fallbackUri: forward:/fallback/core
+
+                - name: Retry
+                  args:
+                    retries: 2
+                    statuses: BAD_GATEWAY, SERVICE_UNAVAILABLE, GATEWAY_TIMEOUT
+                    methods: GET
+                    backoff:
+                      firstBackoff: 50ms
+                      maxBackoff: 300ms
+                      factor: 2
+                      basedOnPreviousValue: true
+                - name: RequestRateLimiter
+                  args:
+                    redis-rate-limiter.replenishRate: 10
+                    redis-rate-limiter.burstCapacity: 20
+                    redis-rate-limiter.requestedTokens: 1
+                    key-resolver: "#{@userKeyResolver}"
+
+            - id: client-service
+              uri: ${CLIENT_SERVICE_URL:http://localhost:8082}
+              predicates:
+                - Path=/api/v1/clients/**
+              filters:
+                - name: CircuitBreaker
+                  args:
+                    name: clientCB
+                    fallbackUri: forward:/fallback/client
+
                 - name: Retry
                   args:
                     retries: 2
@@ -87,25 +128,13 @@ spring:
                       factor: 2
                       basedOnPreviousValue: true
 
-            - id: client-service
-              uri: ${CLIENT_SERVICE_URL:http://localhost:8082}
-              predicates:
-                - Path=/api/v1/clients/**
-              filters:
-                - name: CircuitBreaker
+                - name: RequestRateLimiter
                   args:
-                    name: clientCB
-                    fallbackUri: forward:/fallback/client
-                - name: Retry
-                  args:
-                    retries: 2
-                    statuses: BAD_GATEWAY, SERVICE_UNAVAILABLE, GATEWAY_TIMEOUT
-                    methods: GET
-                    backoff:
-                      firstBackoff: 50ms
-                      maxBackoff: 300ms
-                      factor: 2
-                      basedOnPreviousValue: true
+                    redis-rate-limiter.replenishRate: 10
+                    redis-rate-limiter.burstCapacity: 20
+                    redis-rate-limiter.requestedTokens: 1
+                    key-resolver: "#{@userKeyResolver}"
+
 
             - id: notification-service-admin
               uri: ${NOTIFICATION_SERVICE_URL:http://localhost:8081}
