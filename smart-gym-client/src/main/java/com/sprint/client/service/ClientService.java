@@ -38,6 +38,7 @@ public class ClientService {
 
     @Transactional
     public ClientResponse createClient(ClientCreateRequest request) {
+
         if (clientRepository.existsByEmail(request.email())) {
             throw new ClientAlreadyExistException("Client with email " + request.email() + " already exist");
         }
@@ -66,10 +67,12 @@ public class ClientService {
         );
 
         return clientMapper.toDto(savedClient);
+
     }
 
     @Transactional(readOnly = true)
     public Page<ClientResponse> getAllClients(String searchKeyword, Pageable pageable) {
+
         Specification<Client> spec = ClientSpecification.searchByKeyword(searchKeyword);
 
         Page<Client> clientsPage = this.clientRepository.findAll(spec, pageable);
@@ -80,13 +83,16 @@ public class ClientService {
 
     @Transactional(readOnly = true)
     public ClientResponse getClientById(Long id) {
+
         Client client = clientRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Client not found with ID: " + id));
         return clientMapper.toDto(client);
+
     }
 
     @Transactional(readOnly = true)
     public List<ClientResponse> getClientsByIds(Set<Long> ids) {
+
         if (ids == null || ids.isEmpty()) {
             return List.of();
         }
@@ -95,10 +101,12 @@ public class ClientService {
         return clients.stream()
                 .map(clientMapper::toDto)
                 .toList();
+
     }
 
     @Transactional
     public ClientResponse updateClient(Long id, ClientUpdateRequest request) {
+
         Client client = this.clientRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Client not found with ID: " + id));
 
@@ -151,6 +159,7 @@ public class ClientService {
 
     @Transactional
     public ClientResponse toggleClientStatus(Long id, boolean isActive) {
+
         Client client = clientRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Client not found with ID: " + id));
 
@@ -181,6 +190,7 @@ public class ClientService {
         );
 
         return clientMapper.toDto(updatedClient);
+
     }
 
 }

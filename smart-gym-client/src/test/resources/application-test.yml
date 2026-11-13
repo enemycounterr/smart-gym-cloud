@@ -1,0 +1,26 @@
+spring:
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+
+app:
+  rabbitmq:
+    exchange: "test.client.direct"
+    routing-keys:
+      created: "test.client.event.created"
+      status-changed: "test.client.event.status.changed"
+      updated: "test.client.event.updated"
+  outbox:
+    scheduler:
+      fixed-delay: 3600000
+
+jwt:
+  secret: 9z8K8HyV8Z2E2E69dMce2K9mY1EwXwI2uI4M2zC9A1A_SECRET_KEY_FOR_TESTS
+
+management:
+  tracing:
+    enabled: false
