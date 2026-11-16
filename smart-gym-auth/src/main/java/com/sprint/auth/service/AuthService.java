@@ -65,13 +65,9 @@ public class AuthService {
         );
         user.setEmail(request.email());
 
-//        user.setUsername(request.username());
-//
-//        user.setPassword(passwordEncoder.encode(request.password()));
-//        user.setRole(Role.valueOf(request.role().toUpperCase()));
-
         User savedUser = this.userRepository.save(user);
         return buildAuthResponse(savedUser);
+
     }
 
     @Transactional
