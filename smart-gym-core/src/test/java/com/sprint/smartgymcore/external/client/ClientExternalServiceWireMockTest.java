@@ -64,6 +64,8 @@ public class ClientExternalServiceWireMockTest extends BaseIntegrationTest {
         assertNotNull(response);
         assertEquals("Alex", response.name());
 
-        wireMock.verify(2, getRequestedFor(urlEqualTo("/internal/v1/clients/1")));
+        wireMock.verify(2, getRequestedFor(urlEqualTo("/internal/v1/clients/1"))
+                .withHeader("X-Internal-Api-Key", equalTo("local-internal-secret-key"))
+        );
     }
 }

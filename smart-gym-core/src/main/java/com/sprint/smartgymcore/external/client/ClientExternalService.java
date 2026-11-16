@@ -54,7 +54,10 @@ public class ClientExternalService {
     }
 
     public List<ClientResponse> getClientsByIdsFallback(Set<Long> ids, Throwable t) {
-        log.error("Circuit Breaker [clientService] triggered for getClientsByIds. Returning empty fallback list.Reason: {}", t.getMessage());
+        log.error(
+                "Circuit Breaker [clientService] triggered for getClientsByIds. Returning empty fallback list.Reason: {}",
+                t.getMessage()
+        );
         return List.of();
     }
 

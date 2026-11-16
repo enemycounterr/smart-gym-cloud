@@ -71,6 +71,9 @@ app:
       retention-days: 7
       batch-size: 1000
 
+  security:
+    internal-api-key: ${INTERNAL_API_KEY:local-internal-secret-key}
+
 jwt:
   secret: ${JWT_SECRET:v9y$B&E)H@MbQeThWmZq4t7w!z%C*F-JaNdRfUjXn2r5u8x/A?D(G+KbPeShVkYp}
 

@@ -25,7 +25,7 @@ public class OutboxAppender {
          turnstile registration. This class intercepts that event and delegates persistence to OutboxService,
          which stores it as a PENDING outbox entry for reliable delivery to RabbitMQ.
 
-         Flow: AccessService → AccessRegisterEvent → OutboxAppender → OutboxService → outbox_events table
+         Flow: AccessService → AccessRegisterEvent → OutboxAppender → OutboxService → outbox_events table → OutboxScheduler → RabbitMQ
      */
 
     @EventListener

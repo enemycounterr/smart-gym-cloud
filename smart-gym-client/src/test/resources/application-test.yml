@@ -17,6 +17,8 @@ app:
   outbox:
     scheduler:
       fixed-delay: 3600000
+  security:
+    internal-api-key: "test-internal-secret-key-12345"
 
 jwt:
   secret: 9z8K8HyV8Z2E2E69dMce2K9mY1EwXwI2uI4M2zC9A1A_SECRET_KEY_FOR_TESTS

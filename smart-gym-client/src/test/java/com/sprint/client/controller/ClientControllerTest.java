@@ -2,6 +2,7 @@ package com.sprint.client.controller;
 
 import com.sprint.client.dto.ClientCreateRequest;
 import com.sprint.client.dto.ClientResponse;
+import com.sprint.client.security.InternalApiKeyFilter;
 import com.sprint.client.security.JwtService;
 import com.sprint.client.security.SecurityConfig;
 import com.sprint.client.service.ClientService;

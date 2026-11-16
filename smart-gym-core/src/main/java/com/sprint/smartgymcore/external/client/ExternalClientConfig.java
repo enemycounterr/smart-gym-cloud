@@ -11,13 +11,19 @@ import org.springframework.web.service.invoker.HttpServiceProxyFactory;
 @Configuration
 public class ExternalClientConfig {
 
+    public static final String INTERNAL_API_KEY_HEADER = "X-Internal-Api-Key";
+
     @Value("${application.client-service.url}")
     private String clientServiceUrl;
+
+    @Value("${application.client-service.api-key}")
+    private String internalApiKey;
 
     @Bean
     public ClientApiClient clientApiClient(ObservationRegistry observationRegistry) {
         RestClient restClient = RestClient.builder()
                 .baseUrl(clientServiceUrl)
+                .defaultHeader(INTERNAL_API_KEY_HEADER, internalApiKey)
                 .observationRegistry(observationRegistry)
                 .build();
 

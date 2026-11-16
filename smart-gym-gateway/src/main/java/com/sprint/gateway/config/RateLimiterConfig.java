@@ -18,7 +18,6 @@ public class RateLimiterConfig {
     @Bean
     public KeyResolver ipKeyResolver() {
         return exchange -> Mono.just(resolveIp(exchange));
-
     }
 
     /**
