@@ -44,7 +44,8 @@ public class CrmClient {
                                 "name": "%s",
                                 "points": 10
                             }
-                            """.formatted(clientId, clientName))
+                            """.formatted(clientId, clientName)
+                )
                 .retrieve()
                 .toBodilessEntity();
     }

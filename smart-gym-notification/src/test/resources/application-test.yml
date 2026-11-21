@@ -1,0 +1,10 @@
+integration:
+  crm:
+    base-url: http://localhost:9999
+
+jwt:
+  secret: test-super-secret-jwt-key-must-be-at-least-256-bits-long-for-hs256
+
+management:
+  tracing:
+    enabled: false
